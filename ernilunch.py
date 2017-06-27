@@ -1,6 +1,9 @@
-import sys                   # System functions
-import time                  # Timer functions
-import datetime              # Calendar functions
+# System functions
+import sys
+# Timer functions
+import time
+# Calendar functions
+import datetime
 
 # Class wrappers
 from Bot_Mock import Bot_wrapper
@@ -8,339 +11,425 @@ from BD_Mock  import BD_wrapper
 
 # Global definitions
 ####################
-bot   = Bot_wrapper()                                                          # Telepot class
-bd    = BD_wrapper()                                                           # Redis class
-c_end = 1                                                                      # Application thread failsafe
+# Telepot class
+bot   = Bot_wrapper()
+# Redis class
+bd    = BD_wrapper()
+# Application thread failsafe
+c_end = 1
 
 ###########################################################################################################################################
 # Telegram bot oriented methods (Testing purposes)                                                                                       ##
 ###########################################################################################################################################
 def hello_msg(msg):
-  global bot
-  # Retrieve variables
-  chat_id = msg['chat']['id']
+    global bot
+    # Retrieve variables
+    chat_id = msg['chat']['id']
 
-  ## Send greeting message ##
-  bot.send_message(chat_id, 'Wellcome to ERNI Lunch bot, we hope you will make the most of the application')
+    ## Send greeting message ##
+    bot.send_message(chat_id, 'Wellcome to ERNI Lunch bot, we hope you will make the most of the application')
 
 def talk_back(msg):
-  global bot
-  # Retrieve variables
-  chat_id = msg['chat']['id']
-  text    = msg['text']
+    global bot
+    # Retrieve variables
+    chat_id = msg['chat']['id']
+    text    = msg['text']
 
-  ## Repeat what was told
-  bot.send_message(chat_id,text)
-  
+    ## Repeat what was told
+    bot.send_message(chat_id,text)
+    
 
 ###########################################################################################################################################
 ## Redis oriented methods (Testing purposes)                                                                                             ##
 ###########################################################################################################################################
 
-# Create key
-#############
 def create_key(msg):
-  #Global variables
-  global bd
+    """ Create key"""
+    #Global variables
+    global bd
 
-  # Retrieve mensage
-  keyname = msg['text']
-  keyname = keyname.split(" ")
+    # Retrieve mensage
+    keyname = msg['text']
+    keyname = keyname.split(" ")
 
-  if len(keyname) == 2:
-    # Create new entry
-    bd.createNewEntry(keyname[1])
+    if len(keyname) == 2:
+        # Create new entry
+        bd.createNewEntry(keyname[1])
 
-# Get keys
-##########
 def get_keys(msg):
-  # Global bd
-  global bd
-  global bot
+    """ Get keys"""
+    # Global bd
+    global bd
+    global bot
 
-  # Retrieve keys with pattern
-  keys = bd.get_keys('*')
+    # Retrieve keys with pattern
+    keys = bd.get_keys('*')
 
-  chat_id = msg['chat']['id']
+    chat_id = msg['chat']['id']
 
-  bot.send_message(chat_id,'Keys found are:')
-  for key in keys:
-    bot.send_message(chat_id, key)
+    bot.send_message(chat_id,'Keys found are:')
+    for key in keys:
+        bot.send_message(chat_id, key)
 
-# Get key value
-###############
 def get_key_value(msg):
-  # Globals
-  global bd
-  global bot
+    """ Get key value"""
+    # Globals
+    global bd
+    global bot
 
-  # Retrieve and split message
-  chat_id = msg['chat']['id']
-  param   = msg['text']
-  param   = param.split(" ")
+    # Retrieve and split message
+    chat_id = msg['chat']['id']
+    param   = msg['text']
+    param   = param.split(" ")
 
-  if len(param) == 2:
-    values = bd.get_key_value(param[1])
+    if len(param) == 2:
+        values = bd.get_key_value(param[1])
 
-  if len(param) == 3:
-    values = bd.get_hash_value(param[1], param[2])
+    if len(param) == 3:
+        values = bd.get_hash_value(param[1], param[2])
 
-  bot.send_message(chat_id, "Values are:")
-  for value in values:
-    bot.send_message(chat_id, value)
+    bot.send_message(chat_id, "Values are:")
+    for value in values:
+        bot.send_message(chat_id, value)
 
-# Set key value
-###############
 def set_key_value(msg):
-  # Globals
-  global bd
-  global bot
+    """ Set key value"""
+    # Globals
+    global bd
+    global bot
 
-  # Retrieve and split message
-  chat_id = msg['chat']['id']
-  param   = msg['text']
-  param   = param.split(" ")
+    # Retrieve and split message
+    chat_id = msg['chat']['id']
+    param   = msg['text']
+    param   = param.split(" ")
 
-  if len(param) == 4:
-    bd.set_hash_value(param[1], param[2], param[3])
+    if len(param) == 4:
+        bd.set_hash_value(param[1], param[2], param[3])
 
 
 ###########################################################################################################################################
 ## Main methods for ERNI lunch application                                                                                               ##
 ###########################################################################################################################################
 
-# List lunch groups for today
-#############################
 def list_groups(msg):
-  # Globals
-  global bd
-  global bot
+    """ List lunch groups for today"""
+    # Globals
+    global bd
+    global bot
 
-  chat_id = msg['chat']['id']                                                            # Retrieve message parameters
-  
-  today = str(datetime.datetime.now().day)                                               # Retrieve today's date
-
-  today = 'HP_{}_*'.format(today)                                                        # Format key for search
-  keys = bd.get_keys(today)                                                              # Search for available times
-
-  if not keys:                                                                           # If no group has been found...
-    bot.send_message(chat_id,'No proposal has been found')                               # ...report to the user
-
-  if keys:                                                                               # If any group has been found...
-    bot.send_message(chat_id,'Times available are:')                                     # ...report that some groups have been found
-    keys = sorted(keys)                                                                  # Arrange keys
+    # Retrieve message parameters
+    chat_id = msg['chat']['id']
     
-    for key in keys:                                                                     # For every time available
-      bot.send_message(chat_id, tmp[2])                                                  # Report to the user available times
-    
-# Propose a new lunch group time
-################################
+    # Retrieve today's date
+    today = str(datetime.datetime.now().day)
+
+    # Format key for search
+    today = 'HP_{}_*'.format(today)
+    # Search for available times
+    keys = bd.get_keys(today)
+
+    # If no group has been found...
+    if not keys:
+        # ...report to the user
+        bot.send_message(chat_id,'No proposal has been found')
+
+    # If any group has been found...
+    if keys:
+        # ...report that some groups have been found
+        bot.send_message(chat_id,'Times available are:')
+        # Arrange keys
+        keys = sorted(keys)
+        
+        # For every time available
+        for key in keys:
+            # Report to the user available times
+            bot.send_message(chat_id, tmp[2])
+
 def propose_group(msg):
-  # Globals
-  global bd
-  global bot
+    """ Propose a new lunch group time"""
+    # Globals
+    global bd
+    global bot
 
-  chat_id = msg['chat']['id']                                                            # Retrieve parameters
-  param   = msg['text']
-  param   = param.split(" ")
+    # Retrieve parameters
+    chat_id = msg['chat']['id']
+    param   = msg['text']
+    param   = param.split(" ")
 
-  try:
-    time.strptime(param[1], '%H:%M')                                                     # Check proposed time
-  except ValueError:
-    bot.send_message(chat_id,"Time format incorrect, should be HH:MM")                   # Report to the user the correct format
-    return
+    try:
+        # Check proposed time
+        time.strptime(param[1], '%H:%M')
+    except ValueError:
+        # Report to the user the correct format
+        bot.send_message(chat_id,"Time format incorrect, should be HH:MM")
+        return
 
-  today = str(datetime.datetime.now().day)                                               # Retrieve today's date
+    # Retrieve today's date
+    today = str(datetime.datetime.now().day)
 
-  keyname = 'HP_{}_{}'.format(today,param[1])                                            # Format key UPGRADE: Locations
-  keys    = bd.get_keys(keyname)                                                         # Retrieve existing keys
+    # Format key UPGRADE: Locations
+    keyname = 'HP_{}_{}'.format(today,param[1])
+    # Retrieve existing keys
+    keys    = bd.get_keys(keyname)
 
-  if keys:                                                                               # If a key already exists...
-    bd.insert_left_list(keyname, chat_id)                                                # ...join the group
-    bot.send_message(chat_id,"You joined group for %s" % param[1])                       # Report to the user
-    return
-  
-  bd.insert_left_list(keyname, chat_id)                                                  # Insert new proposed time
-  bd.expire(keyname,8*60*60)                                                             # Set 8h expiration (Ideas?)
-  bot.send_message(chat_id,"You proposed group for %s" % param[1])                       # Report to the user
+    # If a key already exists...
+    if keys:
+        # ...join the group
+        bd.insert_left_list(keyname, chat_id)
+        # Report to the user
+        bot.send_message(chat_id,"You joined group for %s" % param[1])
+        return
+    
+    # Insert new proposed time
+    bd.insert_left_list(keyname, chat_id)
+    # Set 8h expiration (Ideas?)
+    bd.expire(keyname,8*60*60)
+    # Report to the user
+    bot.send_message(chat_id,"You proposed group for %s" % param[1])
 
-## How many people in group
-###########################
 def how_many_group(msg):
-  # Globals
-  global bd
-  global bot
+    """ How many people in group"""
+    # Globals
+    global bd
+    global bot
 
-  chat_id = msg['chat']['id']                                                            # Retrieve mensage parameters
-  param   = msg['text']
-  param   = param.split(" ")
+    # Retrieve mensage parameters
+    chat_id = msg['chat']['id']
+    param   = msg['text']
+    param   = param.split(" ")
 
-  try:
-    time.strptime(param[1], '%H:%M')                                                     # Check proposed time
-  except ValueError:
-    bot.send_message(chat_id,"Time format incorrect, should be HH:MM")                   # Report if it is incorrect
-    return
-  
-  today = str(datetime.datetime.now().day)                                               # Retrieve today's date
+    try:
+        # Check proposed time
+        time.strptime(param[1], '%H:%M')
+    except ValueError:
+        # Report if it is incorrect
+        bot.send_message(chat_id,"Time format incorrect, should be HH:MM")
+        return
+    
+    # Retrieve today's date
+    today = str(datetime.datetime.now().day)
 
-  keyname = 'HP_{}_{}'.format(today,param[1])                                            # Format search key UPGRADE: Use location
-  keys    = bd.get_keys(keyname)                                                         # Retrieve all matching keys from DB
+    # Format search key UPGRADE: Use location
+    keyname = 'HP_{}_{}'.format(today,param[1])
+    # Retrieve all matching keys from DB
+    keys    = bd.get_keys(keyname)
 
-  if not keys:                                                                           # If no proposal was found...
-    bot.send_message(chat_id,'No proposal has been found')                               # ...report it to the user
-    return
-  
-  people = bd.get_length(keyname)                                                        # Retrieve the number of people that joined
+    # If no proposal was found...
+    if not keys:
+        # ...report it to the user
+        bot.send_message(chat_id,'No proposal has been found')
+        return
+    
+    # Retrieve the number of people that joined
+    people = bd.get_length(keyname)
 
-  if people == 1:                                                                        # If only one person proposed...
-    bot.send_message(chat_id,'At {} only {} person'.format(param[1],people))             # ...report it to the user
-    return
+    # If only one person proposed...
+    if people == 1:
+        # ...report it to the user
+        bot.send_message(chat_id,'At {} only {} person'.format(param[1],people))
+        return
 
-  bot.send_message(chat_id,'At {} there are {} people'.format(param[1],people))          # Report to the user number of people
+    # Report to the user number of people
+    bot.send_message(chat_id,'At {} there are {} people'.format(param[1],people))
 
-
-## Join lunch time group
-########################
 def join_group(msg):
-  # Globals
-  global bd
-  global bot
+    """ Join lunch time group"""
+    # Globals
+    global bd
+    global bot
 
-  chat_id = msg['chat']['id']                                                           # Retrieve mensage parameters
-  param   = msg['text']
-  param   = param.split(" ")
-  
-  try:
-    time.strptime(param[1], '%H:%M')                                                    # Check proposed time format
-  except ValueError:
-    bot.send_message(chat_id,"Time format incorrect, should be HH:MM")                  # Incorrect format was proposed
-    return
-  
-  
-  today = str(datetime.datetime.now().day)                                              # Retrieve today's date
+    # Retrieve mensage parameters
+    chat_id = msg['chat']['id']
+    param   = msg['text']
+    param   = param.split(" ")
+    
+    try:
+        # Check proposed time format
+        time.strptime(param[1], '%H:%M')
+    except ValueError:
+        # Incorrect format was proposed
+        bot.send_message(chat_id,"Time format incorrect, should be HH:MM")
+        return
+    
+    
+    # Retrieve today's date
+    today = str(datetime.datetime.now().day)
 
-  keyname = 'HP_{}_{}'.format(today,param[1])                                           # Create label format UPGRADE: Different locations
-  keys    = bd.get_keys(keyname)                                                        # Retrieve all matching keys from DB
+    # Create label format UPGRADE: Different locations
+    keyname = 'HP_{}_{}'.format(today,param[1])
+    # Retrieve all matching keys from DB
+    keys    = bd.get_keys(keyname)
 
-  if not keys:                                                                          # If no appointment is found...
-    bot.send_message(chat_id,'No proposal has been found')                              # ...report to the user
-    return
+    # If no appointment is found...
+    if not keys:
+        # ...report to the user
+        bot.send_message(chat_id,'No proposal has been found')
+        return
 
-  bd.insert_left_list(keyname, chat_id)                                                 # Add user to key list
-  bot.send_message(chat_id,'You have joined the {} group'.format(param[1]))             # Report to the user
+    # Add user to key list
+    bd.insert_left_list(keyname, chat_id)
+    # Report to the user
+    bot.send_message(chat_id,'You have joined the {} group'.format(param[1]))
 
-## Leave lunch time group
-#########################
 def leave_group(msg):
-  # Globals
-  global bd
-  global bot
+    """ Leave lunch time group"""
+    # Globals
+    global bd
+    global bot
 
-  chat_id = msg['chat']['id']                                                           # Retrieve message parameters
-  
-  today = str(datetime.datetime.now().day)                                              # Retrieve today's date
+    # Retrieve message parameters
+    chat_id = msg['chat']['id']
+    
+    # Retrieve today's date
+    today = str(datetime.datetime.now().day)
 
-  keyname = 'HP_{}_*'.format(today)                                                     # Create key format UPGRADE: Use different locations
-  keys    = bd.get_keys(keyname)                                                        # Retrieve all keys in DB
+    # Create key format UPGRADE: Use different locations
+    keyname = 'HP_{}_*'.format(today)
+    # Retrieve all keys in DB
+    keys    = bd.get_keys(keyname)
 
-  if not keys:                                                                          # If no key was found for today...
-    bot.send_message(chat_id,'No proposal has been found')                              # ...inform the user
+    # If no key was found for today...
+    if not keys:
+        # ...inform the user
+        bot.send_message(chat_id,'No proposal has been found')
 
-  for key in keys:                                                                      # Check for all keys retrieved from today
-    res = bd.remove_from_list(key, chat_id)                                             # Remove element from list
-    if res is not 0:                                                                    # If at least one element was removed
-      proposal = key.split("_")                                                         # Get time from key
-      bot.send_message(chat_id,'You have been removed from {}'.format(proposal[2]))     # Announced removed time
+    # Check for all keys retrieved from today
+    for key in keys:
+        # Remove element from list
+        res = bd.remove_from_list(key, chat_id)
+        # If at least one element was removed
+        if res is not 0:
+            # Get time from key
+            proposal = key.split("_")
+            # Announced removed time
+            bot.send_message(chat_id,'You have been removed from {}'.format(proposal[2]))
 
-# Emergency shutdown
-####################
 def end_execution(msg):
-  # Retrieve variables
-  global c_end
-  global bot
-  
-  chat_id = msg['chat']['id']                                                           # Retrieve parameters
+    """ Emergency shutdown"""
+    # Retrieve variables
+    global c_end
+    global bot
+    
+    # Retrieve parameters
+    chat_id = msg['chat']['id']
 
-  bot.send_message(chat_id,'Performing arakiri')                                        # Report to user
-  print 'I die alone'                                                                   # Report to console
-  c_end = 0                                                                             # Kill thread loop
+    # Report to user
+    bot.send_message(chat_id,'Performing arakiri')
+    # Report to console
+    print ('I die alone')
+    # Kill thread loop
+    c_end = 0
 
-# Report error message
-######################
 def report_error(msg):
-  global bot
+    """ Report error message"""
+    global bot
 
-  chat_id = msg['chat']['id']                                                           # Retrieve message parameters
+    # Retrieve message parameters
+    chat_id = msg['chat']['id']
 
-  bot.send_message(chat_id,'This is an error')                                          # Report to the user
+    # Report to the user
+    bot.send_message(chat_id,'This is an error')
 
 ###########################################################################################################################################
 # List of user available commands                                                                                                        ##
 ###########################################################################################################################################
-commands = { '/hello':    hello_msg,                                                    # Send greeting message
-             '/list':     list_groups,                                                  # List all available groups for today
-             '/propose':  propose_group,                                                # Create or join a lunch group
-             '/join':     join_group,                                                   # Join a lunch group
-             '/howmany':  how_many_group,                                               # How many members requested to join lunch time             
-             '/leave':    leave_group,                                                  # Be removed from all lunch groups
-             '/die':      end_execution,                                                # Emergency stop for script
-             '/error':    report_error}                                                 # Error found
+# Send greeting message
+commands = { '/hello':    hello_msg,
+                         # List all available groups for today
+                         '/list':     list_groups,
+                         # Create or join a lunch group
+                         '/propose':  propose_group,
+                         # Join a lunch group
+                         '/join':     join_group,
+                         # How many members requested to join lunch time             
+                         '/howmany':  how_many_group,
+                         # Be removed from all lunch groups
+                         '/leave':    leave_group,
+                         # Emergency stop for script
+                         '/die':      end_execution,
+                         # Error found
+                         '/error':    report_error}
 
 ###########################################################################################################################################
 # Thread loop methods (Telegram bot and ERNI Lunch application)                                                                          ##
 ###########################################################################################################################################
 
-## Function to advise of incomming lunch time
-#############################################
 def call_out(now):
-  # Globals
-  global bd
-  global bot
+    """ Function to advise of incomming lunch time"""
+    # Globals
+    global bd
+    global bot
 
-  today = now.day                                                              # Retrieve day
-  h     = now.hour                                                             # Hour
-  m     = now.minute                                                           # Minute
-  
-  try:                                                                         # Test proposed time
-    proTime = '{:02}:{:02}'.format(h, m+5)                                     # Generate lunch time in 5 min
-    time.strptime(proTime, '%H:%M')                                            # Check correct time format
-    m = m+5                                                                    # No issue found, advance 5 min
-  except ValueError:
-    h =  h + 1                                                                 # TODO: This should take into account 24h clock and day/month/year
-    m = (m + 5)%60                                                             # Advance 5 min into next hour
+    # Retrieve day
+    today = now.day
+    # Hour
+    h     = now.hour
+    # Minute
+    m     = now.minute
+    
+    # Test proposed time
+    try:
+        # Generate lunch time in 5 min
+        proTime = '{:02}:{:02}'.format(h, m+5)
+        # Check correct time format
+        time.strptime(proTime, '%H:%M')
+        # No issue found, advance 5 min
+        m = m+5
+    except ValueError:
+        # TODO: This should take into account 24h clock and day/month/year
+        h =  h + 1
+        # Advance 5 min into next hour
+        m = (m + 5)%60
 
-  keyname = 'HP_{}_{:02}:{:02}'.format(today,h,m)                              # Compose appointment name
-  keys = bd.get_keys(keyname)                                                  # Get appointment in 5 min
+    # Compose appointment name
+    keyname = 'HP_{}_{:02}:{:02}'.format(today,h,m)
+    # Get appointment in 5 min
+    keys = bd.get_keys(keyname)
 
-  if not keys:                                                                 # No appointment is found
-    return
+    # No appointment is found
+    if not keys:
+        return
 
-  for key in keys:                                                             # There should be only one...
-    check = 'CHECKED_HP_{}_{:2}:{:2}'.format(today,h,m)                        # Compose check mark
-    res   = bd.get_keys(check)                                                 # Ask check mark
-    if not res:                                                                # If there is no mark
-      attendees = bd.get_list_value(keyname)
-      for attendee in attendees:                                               # For each attendee
-        bot.send_message(attendee,'Lunch is in 5 min')                         # Send a message
+    # There should be only one...
+    for key in keys:
+        # Compose check mark
+        check = 'CHECKED_HP_{}_{:2}:{:2}'.format(today,h,m)
+        # Ask check mark
+        res   = bd.get_keys(check)
+        # If there is no mark
+        if not res:
+            attendees = bd.get_list_value(keyname)
+            # For each attendee
+            for attendee in attendees:
+                # Send a message
+                bot.send_message(attendee,'Lunch is in 5 min')
 
-      bd.insert_left_list(check, 0)                                            # Add flag
-      bd.expire(check,60)                                                      # Add expiration (1 min)
+            # Add flag
+            bd.insert_left_list(check, 0)
+            # Add expiration (1 min)
+            bd.expire(check,60)
 
-## Method used to process each message received
-###############################################
 def proc_mess(msg):
+    """ Method used to process each message received"""
 
-  flavor = bot.get_flavor(msg)                                                 # Retrieve message flavor
+    # Retrieve message flavor
+    flavor = bot.get_flavor(msg)
 
-  if flavor is 'chat':                                                         # If it is a 'chat' message
-    message = msg['text']                                                      # Retrieve the message text
+    # If it is a 'chat' message
+    if flavor is 'chat':
+        # Retrieve the message text
+        message = msg['text']
 
-    command = message.split(" ")                                               # Extract commands and parameters
+        # Extract commands and parameters
+        command = message.split(" ")
 
-    if command[0] not in commands:                                             # If command is not understood...
-      command[0] = '/error'                                                    # ...mark it as an error
+        # If command is not understood...
+        if command[0] not in commands:
+            # ...mark it as an error
+            command[0] = '/error'
 
-    commands[command[0]](msg)                                                  # Execute command based on dictionary
+        # Execute command based on dictionary
+        commands[command[0]](msg)
 
 
 
@@ -351,10 +440,14 @@ def proc_mess(msg):
 
 # Attach message processing method to bot
 #########################################
-bot.add_handle(proc_mess)                                                      # Attach handling message method to bot
+# Attach handling message method to bot
+bot.add_handle(proc_mess)
 
 # While python process is not called to end
 ###########################################
-while c_end:                                                                   # Thread failsafe
-  call_out(datetime.datetime.now())                                            ## Check if any lunch proposal is due
-  time.sleep(5)                                                                ## Sleep for 5 secs
+# Thread failsafe
+while c_end:
+    ## Check if any lunch proposal is due
+    call_out(datetime.datetime.now())
+    ## Sleep for 5 secs
+    time.sleep(5)

@@ -1,5 +1,6 @@
 """
 Erni bot launcher
+USEFUL DOC http://telepot.readthedocs.io/en/latest/
 """
 # System functions
 import sys
@@ -499,7 +500,7 @@ def proc_mess(msg):
     text = '/error'
 
     # Retrieve message flavor
-    flavor = BOT.get_flavor(msg).decode("utf-8")
+    flavor = BOT.get_flavor(msg)
 
     # If it is a 'chat' message...
     if flavor == 'chat':

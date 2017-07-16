@@ -106,12 +106,13 @@ class GroupChat(telepot.helper.ChatHandler):
         self._chat.update_chat(msg["chat"])
         self._chat.add_user(msg["from"])
         current_user = self.add_user_to_group_list(msg["from"])
-        if current_user.checkForPrivileges("Admin"):
+        if current_user.checkForPrivileges("User"):
             if msg["text"] == "/on":
                 led.on()
+                self.sender.sendMessage("Led ON")
             if msg["text"] == "/off":
                 led.off()    
-    
+                self.sender.sendMessage("Led OFF")
         
     def add_user_to_group_list(self, user_msg):
         for user in self._users:

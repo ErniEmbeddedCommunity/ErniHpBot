@@ -1,11 +1,11 @@
 import sys
 import time
 import telepot
+import ledController as led
 from telepot.loop import MessageLoop
 from telepot.delegate import pave_event_space, per_chat_id, create_open
 from BotMock import User, Chat
 from BDMock import BDWrapper
-
 #BDWrapper.createDBConnection()
 
 class MessageCounter(telepot.helper.ChatHandler):
@@ -94,7 +94,6 @@ class GroupChat(telepot.helper.ChatHandler):
     def __init__(self, *args, **kwargs):
         super(GroupChat, self).__init__(*args, **kwargs)
         self._users = list()
-        self._count = 0
 
     def open(self, initial_msg, seed):
         """Do something when the first msg arrives."""
@@ -106,21 +105,23 @@ class GroupChat(telepot.helper.ChatHandler):
         #for user in _users:
         self._chat.update_chat(msg["chat"])
         self._chat.add_user(msg["from"])
-        self.add_user_to_group_list(msg["from"])
-        
-        self._count += 1
-        self.sender.sendMessage(self._count)
+        current_user = self.add_user_to_group_list(msg["from"])
+        if current_user.checkForPrivileges("Admin"):
+            if msg["text"] == "/on":
+                led.on()
+            if msg["text"] == "/off":
+                led.off()    
     
-        self.bot.sendMessage(self._users[0]._telegram_user["id"],msg)
         
     def add_user_to_group_list(self, user_msg):
         for user in self._users:
             if user.id() == user_msg["id"]:
                 user.update_telegram_user(user_msg)
-                return
+                return user
         new_user = User.create_user_by_Id(user_msg)
         new_user.add_group(self.chat_id)
         self._users.append(new_user)
+        return new_user
 
     # def on_close(self, event):
     #     """Do something on close"""

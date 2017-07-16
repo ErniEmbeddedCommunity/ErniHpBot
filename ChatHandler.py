@@ -50,12 +50,17 @@ class PrivateUserChat(telepot.helper.ChatHandler):
 
     def on_chat_message(self, msg):
         """handle new msg.""" 
-        if msg["text"] == "/User":
-            self._user.privileges.add("User")
-        if msg["text"] == "/CanI":
-            self.sender.sendMessage(self._user.checkForPrivileges("User"))
-        self.sender.sendMessage(self._user.get_last_msg())
+        try:
+            if msg["text"] == "/User":
+                self._user.privileges.add("User")
+            if msg["text"] == "/CanI":
+                self.sender.sendMessage(self._user.checkForPrivileges("User"))
+            self.sender.sendMessage(self._user.get_last_msg())
+        except telepot.exception.TelegramError:
+            pass
+
         self._user.set_last_msg(msg["text"])
+
         
 
     # def on_close(self, event):

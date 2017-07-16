@@ -2,14 +2,13 @@
 
 import os
 print("os name " + os.uname().machine)
-if os.uname().machine == "arm":
+if os.uname().machine == "armv7l":
     from gpiozero import LED    
 else:
     from gpiozero_dummy import LED
 
 led = LED(17)
-
 def on():
     led.on()
 def off():
-    led.off()
+    led off()

@@ -1,9 +1,8 @@
 """
-Erni bot launcher
+Erni bot launcher.
+
 USEFUL DOC http://telepot.readthedocs.io/en/latest/
 """
-# System functions
-import sys
 # Timer functions
 import time
 # Calendar functions
@@ -13,12 +12,17 @@ import datetime
 from BotMock import BotWrapper
 from BDMock  import BDWrapper
 
+#ARG handler
+
+TOKEN = sys.argv[1]  # get token from command-line
+
+
 # Global definition
 ####################
 # Redis class
 BD = BDWrapper()
 # Telepot class
-BOT = BotWrapper(BD)
+BOT = BotWrapper(TOKEN)
 # Application thread failsafe
 CEND = 1
 
@@ -26,9 +30,7 @@ CEND = 1
 # Telegram bot oriented methods (Testing purposes)                                                ##
 ####################################################################################################
 def hello_msg(chat_id, text):
-    """
-    Say Hello to new users
-    """
+    """Say Hello to new users."""
     global BOT
 
     ## Send greeting message ##
@@ -38,7 +40,7 @@ def hello_msg(chat_id, text):
     """)
 
 def talk_back(chat_id, text):
-    """Echo function"""
+    """Echo function."""
     global BOT
 
     ## Repeat what was told
@@ -354,7 +356,7 @@ def join_group(chat_id, text):
     group_menu(chat_id, '/group %s' % param[1])
 
 def leave_group(chat_id, text):
-    """ Leave lunch time group"""
+    """Leave lunch time group."""
     # Globals
     global BD
     global BOT

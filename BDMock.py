@@ -1,12 +1,26 @@
 """
 Data base connection
 """
-import sys
 import string
+import sys
+
 import redis
+
 
 class BDWrapper:
     """Helper functions to connect to the database"""
+    DB = None
+    @classmethod
+    def getDB(cls):
+        if cls.DB is None:
+            cls.createDBConnection()
+        return cls.DB
+
+    @classmethod
+    def createDBConnection(cls):
+        if cls.DB is None:
+            cls.DB = BDWrapper()
+
     def __init__(self):
         self.__conn = redis.Redis()
         print('I am BD')

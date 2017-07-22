@@ -1,11 +1,16 @@
+import os
 import sys
 import time
 import telepot
 import ledController as led
+import tempfile
+
 from telepot.loop import MessageLoop
 from telepot.delegate import pave_event_space, per_chat_id, create_open
 from BotMock import User, Chat
 from BDMock import BDWrapper
+from RadioPlayer import FmPlayer
+
 #BDWrapper.createDBConnection()
 
 class MessageCounter(telepot.helper.ChatHandler):
@@ -44,33 +49,44 @@ class PrivateUserChat(telepot.helper.ChatHandler):
     def open(self, initial_msg, seed):
         """Do something when the first msg arrives."""
         self._user = User.create_user_by_Id(initial_msg["from"])
-        self.sender.sendMessage("Welcome to this private chat")
+#        self.sender.sendMessage("Welcome to this private chat")
 
     def on_chat_message(self, msg):
         """handle new msg.""" 
         self._user.update_telegram_user(msg["from"])
         try:
-            if msg["text"] == "/User":
-                self._user.privileges.add("User")
-                self.sender.sendMessage("You are user now")
-            if msg["text"].startswith("/Admin"):
-                if msg["text"].endswith("erni"):
-                    self._user.privileges.add("Admin")
-                    self.sender.sendMessage("You are admin now")
-                else:
-                    self.sender.sendMessage("Wrong password")
+            if "voice" in msg: 
+                voiceFile = self.bot.getFile(msg["voice"]["file_id"])
+                self.sender.sendMessage("Playing your audio over radio")
+                self.bot.download_file(voiceFile["file_id"],"voice/" + str(voiceFile["file_id"]) + ".wav")
+                FmPlayer.play_file("voice/" + str(voiceFile["file_id"]) + ".wav")
+            if "text" in msg:
+                if msg["text"] == "Star":
+                    self.sender.sendMessage("may the force be with you")
+                    os.system("sudo ~/fm_transmitter/fm_transmitter -f 108.0 -r ~/fm_transmiter/star_wars.wav")
+                if msg["text"] == "/User":
+                    self._user.privileges.add("User")
+                    self.sender.sendMessage("You are user now")
+                if msg["text"].startswith("/Admin"):
+                    if msg["text"].endswith("erni"):
+                        self._user.privileges.add("Admin")
+                        self.sender.sendMessage("You are admin now")
+                    else:
+                        self.sender.sendMessage("Wrong password")
 
-            if msg["text"] == "/CanI":
-                self.sender.sendMessage(",".join(self._user.privileges))
-            if msg["text"] == "/toGroup":
-                for groupId in self._user.groups:
-                    self.bot.sendMessage(groupId,str(self._user._telegram_user["username"]))
+                if msg["text"] == "/CanI":
+                    self.sender.sendMessage(",".join(self._user.privileges))
+                if msg["text"] == "/toGroup":
+                    for groupId in self._user.groups:
+                        self.bot.sendMessage(groupId,str(self._user._telegram_user["username"]))
 
-            self.sender.sendMessage(self._user.get_last_msg())
-        except telepot.exception.TelegramError:
+                self.sender.sendMessage(self._user.get_last_msg() +".")
+                self._user.set_last_msg(msg["text"])
+        
+        except telepot.exception.TelegramError as err:
+            print(err)
             pass
 
-        self._user.set_last_msg(msg["text"])
 
         
 
@@ -97,7 +113,7 @@ class GroupChat(telepot.helper.ChatHandler):
 
     def open(self, initial_msg, seed):
         """Do something when the first msg arrives."""
-        self.sender.sendMessage("Welcome to this group chat")
+       # self.sender.sendMessage("Welcome to this group chat")
         self._chat = Chat.create_chat_by_id(initial_msg["chat"])
 
     def on_chat_message(self, msg):
@@ -132,7 +148,7 @@ class GroupChat(telepot.helper.ChatHandler):
 
     def on__idle(self,event):
         """Do something on idle"""
-        self.sender.sendMessage("dispose")
+#        self.sender.sendMessage("dispose")
         Chat.dispose_chat_by_id(self.chat_id)
         for user in self._users:
             User.dispose_user_by_id(user.id())
@@ -140,12 +156,12 @@ class GroupChat(telepot.helper.ChatHandler):
 
 
 TOKEN = sys.argv[1]  # get token from command-line
-
+TIMEOUT = 60
 bot = telepot.DelegatorBot(TOKEN, [
     pave_event_space()(
-        per_chat_id(types='private'), create_open, PrivateUserChat, timeout=5),
+        per_chat_id(types='private'), create_open, PrivateUserChat, timeout=TIMEOUT),
     pave_event_space()(
-        per_chat_id(types=['supergroup','group']), create_open, GroupChat, timeout=5),
+        per_chat_id(types=['supergroup','group']), create_open, GroupChat, timeout=TIMEOUT),
 ])
 MessageLoop(bot).run_as_thread()
 

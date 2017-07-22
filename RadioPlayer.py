@@ -9,8 +9,8 @@ import shlex
 class FmPlayer(Thread):
     """Plays files over FM"""
     freq = "87.0"
-    _condition = Condition()
 
+    _condition = Condition()
     _playlist = deque()
     class FileInfo:
         """Data holder for play files"""
@@ -31,6 +31,7 @@ class FmPlayer(Thread):
 
     @classmethod
     def play_file(cls, file_name, delete_after_play = True, delete_after_convert = True):
+        """adds a new file to the queue"""
         cls._condition.acquire()
         print("Added new file to the playlist")
         cls._playlist.append(FmPlayer.FileInfo(file_name,delete_after_convert=delete_after_convert,delete_after_play=delete_after_play))
@@ -39,6 +40,7 @@ class FmPlayer(Thread):
             
     @classmethod
     def _play_file(cls, file_info: FileInfo):
+        """INTERNAL USE ONLY, plays the file over fm """
         print("Playing " + file_info.file_name())
         wav_file = cls._convert_file_to_wav(file_info)
         print("File converted to wav " + str(wav_file))
@@ -46,19 +48,28 @@ class FmPlayer(Thread):
         print("File played")
     
     def run(self):
+        """Runs the player thread."""
         print("FM PLAYER THREAD STARTED")
-        while True:
-            self._condition.acquire()
-            if not self._playlist:
-                print ("Nothing to play")
-                self._condition.wait()
-                print ("file added")
-            next_file = self._playlist.popleft()
-            self._condition.release()
-            self._play_file(next_file)
-
+        try:
+            while True:
+                self._condition.acquire()
+                if not self._playlist:
+                    print ("Nothing to play")
+                    self._condition.wait()
+                    print ("file added")
+                next_file = self._playlist.popleft()
+                self._condition.release()
+                self._play_file(next_file)
+        except Exception as ex:
+            print("Exeption in FM player, transmission stoped")
+            print(str(ex))
     @staticmethod
     def _convert_file_to_wav(file_info: FileInfo):
+        """
+        Converts the input file to wav using avconv.
+        Deletes the input file after convert if the flat is set in FileInfo. 
+        Returns the info of the converted file.
+        """ 
         command = "avconv -i " + str(file_info) + " " + str(file_info) + ".wav -y"
         avconv_process = Popen(shlex.split(command), stderr=STDOUT)
         avconv_process.wait()
@@ -70,6 +81,10 @@ class FmPlayer(Thread):
 
     @staticmethod
     def _launch_transmiter(freq, file_info: FileInfo):
+        """
+        Opens fm_transmitter with sox output, file input must be wav
+        Deletes the file input after transmit if the flag is set in fileInfo
+        """
         sox_process = Popen(shlex.split("sox " + str(file_info)+ " -t wav -"), stderr=STDOUT, stdout=PIPE)
         fm_transmitter_process = Popen(shlex.split("sudo fm_transmitter/fm_transmitter -f "+ freq + " - "),stderr=STDOUT, stdin=sox_process.stdout )
         fm_transmitter_process.wait()

@@ -58,8 +58,8 @@ class PrivateUserChat(telepot.helper.ChatHandler):
             if "voice" in msg: 
                 voiceFile = self.bot.getFile(msg["voice"]["file_id"])
                 self.sender.sendMessage("Playing your audio over radio")
-                self.bot.download_file(voiceFile["file_id"],"voice/" + str(voiceFile["file_id"]) + ".wav")
-                FmPlayer.play_file("voice/" + str(voiceFile["file_id"]) + ".wav")
+                self.bot.download_file(voiceFile["file_id"],"voice/" + str(voiceFile["file_id"]) + ".ogg")
+                FmPlayer.play_file("voice/" + str(voiceFile["file_id"]) + ".ogg")
             if "text" in msg:
                 if msg["text"] == "Star":
                     self.sender.sendMessage("may the force be with you")

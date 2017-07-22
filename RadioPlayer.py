@@ -3,6 +3,8 @@ import os
 from threading import Lock, Thread, Condition
 from time import sleep
 from collections import deque
+from subprocess import Popen, PIPE, STDOUT
+import shlex
 
 class FmPlayer(Thread):
     """Plays files over FM"""
@@ -58,8 +60,9 @@ class FmPlayer(Thread):
     @staticmethod
     def _convert_file_to_wav(file_info: FileInfo):
         command = "avconv -i " + str(file_info) + " " + str(file_info) + ".wav -y"
-        print(command)
-        os.system(command)
+        avconv_process = Popen(shlex.split(command), stderr=STDOUT)
+        avconv_process.wait()
+        
         if file_info.delete_after_convert():
             os.remove(str(file_info))
         file_info.rename(str(file_info) + ".wav")
@@ -67,9 +70,9 @@ class FmPlayer(Thread):
 
     @staticmethod
     def _launch_transmiter(freq, file_info: FileInfo):
-        command =  "sox "+str(file_info)+" -t wav - |sudo fm_transmitter/fm_transmitter -f "+ freq + " - " 
-        print(command)
-        os.system(command)
+        sox_process = Popen(shlex.split("sox " + str(file_info)+ " -t wav -"), stderr=STDOUT, stdout=PIPE)
+        fm_transmitter_process = Popen(shlex.split("sudo fm_transmitter/fm_transmitter -f "+ freq + " - "),stderr=STDOUT, stdin=sox_process.stdout )
+        fm_transmitter_process.wait()
         if file_info.delete_after_play():
             os.remove(str(file_info))
 

@@ -9,7 +9,6 @@ from telepot            import  flavor
 from BDMock            import  BDWrapper
 from threading import Lock
 
-
 class BotWrapper:
     """Functios for managing the conection to the bot"""
     def __init__(self, token: str):

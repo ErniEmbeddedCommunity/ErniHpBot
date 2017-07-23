@@ -50,6 +50,9 @@ class FmPlayer(Thread):
     def run(self):
         """Runs the player thread."""
         print("FM PLAYER THREAD STARTED")
+        
+        if os.uname().machine != "armv7l":
+            print("RUNNING OUTSIDE RASPBERRY, FM disabled")
         try:
             while True:
                 self._condition.acquire()
@@ -70,6 +73,13 @@ class FmPlayer(Thread):
         Deletes the input file after convert if the flat is set in FileInfo. 
         Returns the info of the converted file.
         """ 
+        
+        if os.uname().machine != "armv7l":
+            sleep(1)
+            return file_info
+        ## don't convert the file if it's already wav
+        if file_info.getName().endswith(".wav"):
+            return file_info
         command = "avconv -i " + str(file_info) + " " + str(file_info) + ".wav -y"
         avconv_process = Popen(shlex.split(command), stderr=STDOUT)
         avconv_process.wait()
@@ -85,6 +95,11 @@ class FmPlayer(Thread):
         Opens fm_transmitter with sox output, file input must be wav
         Deletes the file input after transmit if the flag is set in fileInfo
         """
+        if os.uname().machine != "armv7l":
+            if file_info.delete_after_play():
+                os.remove(str(file_info))
+            sleep(3)
+            return
         sox_process = Popen(shlex.split("sox " + str(file_info)+ " -t wav -"), stderr=STDOUT, stdout=PIPE)
         fm_transmitter_process = Popen(shlex.split("sudo fm_transmitter/fm_transmitter -f "+ freq + " - "),stderr=STDOUT, stdin=sox_process.stdout )
         fm_transmitter_process.wait()

@@ -78,7 +78,7 @@ class FmPlayer(Thread):
             sleep(1)
             return file_info
         ## don't convert the file if it's already wav
-        if file_info.getName().endswith(".wav"):
+        if file_info.file_name().endswith(".wav"):
             return file_info
         command = "avconv -i " + str(file_info) + " " + str(file_info) + ".wav -y"
         avconv_process = Popen(shlex.split(command), stderr=STDOUT)

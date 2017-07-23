@@ -1,4 +1,14 @@
-"""Module for playing audio files over FM"""
+"""
+Module for playing audio files over FM
+SOURCES:
+fm_transmitter
+https://github.com/markondej/fm_transmitter
+
+produccer/consummer pattern
+http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/
+
+
+"""
 import os
 from threading import Lock, Thread, Condition
 from time import sleep

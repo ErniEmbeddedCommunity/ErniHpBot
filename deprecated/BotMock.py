@@ -1,19 +1,22 @@
 """Telegram Bot Wrapper"""
 import pickle
 import telepot
-from telepot.namedtuple import  InlineKeyboardButton, \
-                                InlineKeyboardMarkup, \
-                                ReplyKeyboardMarkup, \
-                                KeyboardButton
-from telepot            import  flavor
-from BDMock            import  BDWrapper
+from telepot.namedtuple import InlineKeyboardButton, \
+    InlineKeyboardMarkup, \
+    ReplyKeyboardMarkup, \
+    KeyboardButton
 from threading import Lock
+from telepot import flavor
+from BDMock import BDWrapper
+import TelegramUser
+
 
 class BotWrapper:
     """Functios for managing the conection to the bot"""
+
     def __init__(self, token: str):
         """ Class oriented methods"""
-        print("Bot token is " +  token)
+        print("Bot token is " + token)
         self.__bot = telepot.Bot(token)
         print('I am alive')
 
@@ -22,6 +25,7 @@ class BotWrapper:
 
     def __exit__(self, exc_type, exc_value, traceback):
         print('I am dead')
+
     @staticmethod
     def sayhello(msg):
         """print a msg"""
@@ -73,6 +77,7 @@ class BotWrapper:
         """ Sends structure keyboard to chat"""
         self.__bot.sendMessage(chat_id, message, reply_markup=keyboard)
 
+
 class Chat:
     """Handles group chat data."""
     active_chats_count = dict()
@@ -107,7 +112,6 @@ class Chat:
             chat.save()
         cls.DBLocker.release()
 
-
     def __init__(self, telegram_chat):
         self._telegram_chat = telegram_chat
         self.users = set()
@@ -125,34 +129,40 @@ class Chat:
     def save(self):
         """Stores the information related to this chat in the database"""
         serialized_object = pickle.dumps(self._telegram_chat)
-        self.DB.set_key_value(str(self._telegram_chat["id"])+"_telegram_chat",serialized_object)
+        self.DB.set_key_value(
+            str(self._telegram_chat["id"]) + "_telegram_chat", serialized_object)
         serialized_object = pickle.dumps(self.users)
-        self.DB.set_key_value(str(self._telegram_chat["id"])+"_users",serialized_object)
+        self.DB.set_key_value(
+            str(self._telegram_chat["id"]) + "_users", serialized_object)
 
     def load(self):
         """Load the information from the database."""
-        byte_telegram_chat = self.DB.get_key_value(str(self._telegram_chat["id"])+"_telegram_chat")
+        byte_telegram_chat = self.DB.get_key_value(
+            str(self._telegram_chat["id"]) + "_telegram_chat")
         if byte_telegram_chat != None:
             self._telegram_chat = pickle.loads(byte_telegram_chat)
-        byte_users = self.DB.get_key_value(str(self._telegram_chat["id"])+"_users")
+        byte_users = self.DB.get_key_value(
+            str(self._telegram_chat["id"]) + "_users")
         if byte_users != None:
             self.users = pickle.loads(byte_users)
 
+
 class User:
     """Handles user data"""
-    
-    active_users_count  = dict()
+
+    active_users_count = dict()
     active_users = dict()
     DB = BDWrapper.getDB()
 
     DBLocker = Lock()
+
     @classmethod
     def create_user_by_Id(cls, telegramid):
         """
         Creates a new user from the data stored in the database 
         or if it already exist
         Returns the current user in use
-        """ 
+        """
         cls.DBLocker.acquire()
         if telegramid["id"] in cls.active_users_count:
             cls.active_users_count[telegramid["id"]] += 1
@@ -178,7 +188,6 @@ class User:
             user.save()
         cls.DBLocker.release()
 
-
     def __init__(self, telegramUser: dict):
         self._telegram_user = telegramUser
         self.privileges = set()
@@ -189,6 +198,7 @@ class User:
 
     def get_last_msg(self):
         return self.last_msg
+
     def set_last_msg(self, msg: str):
         self.last_msg = msg
 
@@ -199,6 +209,13 @@ class User:
             return False
 
     def update_telegram_user(self, telegram_user):
+        testUser = TelegramUser.TUser(telegram_user)
+        print(testUser.__dict__)
+        print(dir(testUser))
+        print(vars(testUser))
+        print(dict(testUser))
+        print(testUser.id)
+        print(testUser["username"])
         self._telegram_user = telegram_user
 
     def add_group(self, chat: Chat):
@@ -209,29 +226,35 @@ class User:
 
     def save(self):
         """Stores the data in the database"""
-        self.DB.set_key_value(str(self._telegram_user["id"])+"_last_msg", self.last_msg)
-        self.DB.set_key_value(str(self._telegram_user["id"])+"_privileges", ",".join(self.privileges))
+        self.DB.set_key_value(
+            str(self._telegram_user["id"]) + "_last_msg", self.last_msg)
+        self.DB.set_key_value(
+            str(self._telegram_user["id"]) + "_privileges", ",".join(self.privileges))
         serialized_object = pickle.dumps(self._telegram_user)
-        self.DB.set_key_value(str(self._telegram_user["id"])+"_telegramUser",serialized_object)
+        self.DB.set_key_value(
+            str(self._telegram_user["id"]) + "_telegramUser", serialized_object)
         serialized_object = pickle.dumps(self.groups)
-        self.DB.set_key_value(str(self._telegram_user["id"])+"_groups",serialized_object)
+        self.DB.set_key_value(
+            str(self._telegram_user["id"]) + "_groups", serialized_object)
 
     def load(self):
         """Loads the data from the database"""
-        byte_last_msg = self.DB.get_key_value(str(self._telegram_user["id"])+"_last_msg")
+        byte_last_msg = self.DB.get_key_value(
+            str(self._telegram_user["id"]) + "_last_msg")
         if byte_last_msg != None:
             self.last_msg = byte_last_msg.decode("utf-8")
 
-        byte_privileges = self.DB.get_key_value(str(self._telegram_user["id"])+"_privileges")
+        byte_privileges = self.DB.get_key_value(
+            str(self._telegram_user["id"]) + "_privileges")
         if byte_privileges != None:
             self.privileges = set(byte_privileges.decode("utf-8").split(","))
 
-        byte_telegram_user = self.DB.get_key_value(str(self._telegram_user["id"])+"_telegramUser")
+        byte_telegram_user = self.DB.get_key_value(
+            str(self._telegram_user["id"]) + "_telegramUser")
         if byte_telegram_user != None:
             self._telegram_user = pickle.loads(byte_telegram_user)
 
-        byte_groups = self.DB.get_key_value(str(self._telegram_user["id"])+"_groups")
+        byte_groups = self.DB.get_key_value(
+            str(self._telegram_user["id"]) + "_groups")
         if byte_groups != None:
             self.groups = pickle.loads(byte_groups)
-
-

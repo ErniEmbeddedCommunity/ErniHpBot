@@ -2,8 +2,8 @@
 This file contais the definition of TUser class and helpers to
 abstract the communication with the database
 """
-import redis as db
 import pickle
+import redis as db
 
 CONN = db.StrictRedis()
 
@@ -13,14 +13,40 @@ def redis_decode(inbytes):
     return inbytes.decode("utf-8")
 
 
+class UserFinder():
+    @staticmethod
+    def get_user_by_username(username: str):
+        username = username.replace("@","")
+        keys =  CONN.keys("*_username")
+        usernames = list(map (redis_decode, CONN.mget(keys)))
+        usernames_dict = dict(zip(usernames, keys))
+        for key, value in usernames_dict.items():
+            if username.lower() == key.lower():
+                id = int(value[0:str(value).find("_")-2])
+                return UserFinder.get_user_by_id(id)
+        return None
+    @staticmethod
+    def get_user_by_id(id):
+        return TUser({"id": id})
+
+
 class TUser():
     """handles the data for each user"""
+    bot = None
 
-    def __init__(self, telegram_user):
+    def __init__(self, telegram_user, bot=None):
         self.id = telegram_user["id"]
+        if bot != None:
+            TUser.bot = bot
         for key, value in telegram_user.items():
             self[key] = value
 
+    def __str__(self):
+        #  dict(iter(self))
+        return '\n'.join(['%s:: %s' % (key, value) for (key, value) in dict(iter(self)).items()])
+
+    def __repr__(self):
+        return self.__str__()
     def __setattr__(self, name, value):
         if name == "id":
             self.__dict__["id"] = value
@@ -29,7 +55,7 @@ class TUser():
         else:
             if isinstance(value, set):
                 RedisSet(self.redis_prefix(name), value)
-            if isinstance(value, list):
+            elif isinstance(value, list):
                 RedisList(self.redis_prefix(name), value)
             elif isinstance(value, str):
                 CONN.set(self.redis_prefix(name), value)
@@ -85,14 +111,18 @@ class TUser():
     def __setitem__(self, name, value):
         self.__setattr__(name, value)
 
-    def redis_prefix(self, attr):
+    def __eq__(self, other):
+        return self.id == other.id
+    def __ne__(self, other):
+        return self.id != other.id
+
+    def redis_prefix(self, attr=""):
         """Generates the prefix for a desired attribute."""
         return str(self.id) + "_" + attr
     # pickle was an idea to store the data in the database
     # independently of the data type
     # Now I think it's preferable to use only raw strings
     # to allow external programms to read the database
-
     @staticmethod
     def pickle_sadd(key, value):
         """NOT IN USE: stores the value as a pickle serialized data."""
@@ -112,6 +142,15 @@ class TUser():
             return pickle.loads(value)
         else:
             return None
+
+    def remove_all_data_from_database(self):
+        # redis-cli KEYS "142825882_*" |xargs redis-cli DEL
+        keys = list(map(redis_decode, CONN.keys(self.redis_prefix("*"))))
+        for key in keys:
+            print(CONN.delete(key))
+
+    def sendMessage(self, msg):
+        self.bot.sendMessage(self.id, msg)
 
 
 class RedisSet:
@@ -136,6 +175,24 @@ class RedisSet:
         if value == self._identification_key:
             Exception("this is an internal value.")
         CONN.srem(self.key, value)
+        s = set()
+
+    def contains(self, value):
+        if CONN.sismember(self.key, value):
+            return True
+        else:
+            return False
+
+    def toogle(self, value):
+        if self.contains(value):
+            self.remove(value)
+            return True
+        else:
+            self.add(value)
+            return False
+
+    def __contains__(self, value):
+        return self.contains(value)
 
     def clear(self):
         CONN.delete(self.key)

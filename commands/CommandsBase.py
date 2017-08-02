@@ -151,6 +151,11 @@ class command():
     def __repr__(self):
         return self.__str__()
 
+    def enable_for_user(self, user):
+        self.enabled_key.add(user.id)
+
+    def disable_for_user(self, user):
+        self.enabled_key.remove(user.id)
 
 class pattern_command(command):
     """
@@ -192,7 +197,8 @@ class KeyboardCommand():
         self.commands.append(pattern_command("(.*)",self.keypress, execution_preference=4, enabled_key=set()))
     def send(self, chat, replace_text = ""):
         for c in self.commands:
-            c.enabled_key.add(chat.id)
+            # c.enabled_key.add(chat.id)
+            c.enable_for_user(chat)
         if replace_text != "":
             chat.sendMessage(replace_text,self.keyboard)
         else:
@@ -200,7 +206,8 @@ class KeyboardCommand():
 
     def keypress(self, chat, message, **kwargs):
         for c in self.commands:
-            c.enabled_key.remove(chat.id)
+            # c.enabled_key.remove(chat.id)
+            c.disable_for_user(chat)
         key = None
         for rowkey in self.keyboard:
             if isinstance(rowkey,list):

@@ -5,6 +5,8 @@ abstract the communication with the database
 import pickle
 import redis as db
 
+from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
+
 CONN = db.StrictRedis()
 
 
@@ -13,31 +15,14 @@ def redis_decode(inbytes):
     return inbytes.decode("utf-8")
 
 
-class UserFinder():
-    @staticmethod
-    def get_user_by_username(username: str):
-        username = username.replace("@","")
-        keys =  CONN.keys("*_username")
-        usernames = list(map (redis_decode, CONN.mget(keys)))
-        usernames_dict = dict(zip(usernames, keys))
-        for key, value in usernames_dict.items():
-            if username.lower() == key.lower():
-                id = int(value[0:str(value).find("_")-2])
-                return UserFinder.get_user_by_id(id)
-        return None
-    @staticmethod
-    def get_user_by_id(id):
-        return TUser({"id": id})
+class RedisStorage():
 
-
-class TUser():
-    """handles the data for each user"""
     bot = None
 
     def __init__(self, telegram_user, bot=None):
         self.id = telegram_user["id"]
         if bot != None:
-            TUser.bot = bot
+            RedisStorage.bot = bot
         for key, value in telegram_user.items():
             self[key] = value
 
@@ -47,6 +32,7 @@ class TUser():
 
     def __repr__(self):
         return self.__str__()
+
     def __setattr__(self, name, value):
         if name == "id":
             self.__dict__["id"] = value
@@ -113,6 +99,7 @@ class TUser():
 
     def __eq__(self, other):
         return self.id == other.id
+
     def __ne__(self, other):
         return self.id != other.id
 
@@ -123,6 +110,7 @@ class TUser():
     # independently of the data type
     # Now I think it's preferable to use only raw strings
     # to allow external programms to read the database
+
     @staticmethod
     def pickle_sadd(key, value):
         """NOT IN USE: stores the value as a pickle serialized data."""
@@ -147,10 +135,7 @@ class TUser():
         # redis-cli KEYS "142825882_*" |xargs redis-cli DEL
         keys = list(map(redis_decode, CONN.keys(self.redis_prefix("*"))))
         for key in keys:
-            print(CONN.delete(key))
-
-    def sendMessage(self, msg):
-        self.bot.sendMessage(self.id, msg)
+            CONN.delete(key)
 
 
 class RedisSet:
@@ -277,3 +262,48 @@ class RedisList:
 
     def __str__(self):
         return "[" + ",".join(map(str, iter(self))) + "]"
+
+
+class TChat(RedisStorage):
+    def sendMessage(self, msg, keyboard=None):
+        if keyboard is not None:
+            keyboard_markup = self.generate_keyboard_from_list(keyboard)
+            self.bot.sendMessage(self.id, msg, reply_markup=keyboard_markup)
+        else:
+            self.bot.sendMessage(self.id, msg)
+
+    @staticmethod
+    def generate_keyboard_from_list(keyboard, resize=True, one_time_keyboard=True):
+        buttons = list()
+        for rowkey in keyboard:
+            buttons.append(list())
+            if isinstance(rowkey,list):
+                for columkey in rowkey:
+                    buttons[-1].append(KeyboardButton(text=columkey))
+            else:
+                buttons[-1].append(KeyboardButton(text=rowkey))
+        return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=resize,
+                                   one_time_keyboard=one_time_keyboard)
+
+
+class TUser(TChat):
+    """handles the data for each user"""
+    @staticmethod
+    def get_user_by_username(username: str):
+        username = username.replace("@", "")
+        keys = CONN.keys("*_username")
+        usernames = list(map(redis_decode, CONN.mget(keys)))
+        usernames_dict = dict(zip(usernames, keys))
+        for key, value in usernames_dict.items():
+            if username.lower() == key.lower():
+                id = int(value[0:str(value).find("_") - 2])
+                return TUser.get_user_by_id(id)
+        return None
+
+    @staticmethod
+    def get_user_by_id(id):
+        return TUser({"id": id})
+
+
+class TGroup(TChat):
+    """handles the data for each group"""

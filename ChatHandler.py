@@ -53,25 +53,24 @@ class PrivateUserChat(telepot.helper.ChatHandler):
 
     def __init__(self, *args, **kwargs):
         super(PrivateUserChat, self).__init__(*args, **kwargs)
+        # TelegramUser.TUser.bot = self.bot
 
     def open(self, initial_msg, seed):
         """Do something when the first msg arrives."""
-        # self._user = User.create_user_by_Id(initial_msg["from"])
-#        self.sender.sendMessage("Welcome to this private chat")
-
+        pass
     def on_chat_message(self, msg):
         """handle new msg."""
         # self._user.update_telegram_user(msg["from"])
+        self.chat = TelegramUser.TGroup(msg["chat"], self.bot)
         self.user = TelegramUser.TUser(msg["from"], self.bot)
         try:
-            CommandsBase.redirect_msg(msg, self.user)
+            CommandsBase.redirect_msg(msg, self.user, self.chat)
         except telepot.exception.TelegramError as err:
             print(err)
 
     def on__idle(self, event):
         """Do something on idle"""
-        # self.sender.sendMessage("closed")
-        # User.dispose_user_by_id(self.chat_id)
+        # call base class on_idle to rise an exception and stop the thread
         super().on__idle(event)
 
 

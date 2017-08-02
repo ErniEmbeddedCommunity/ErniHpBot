@@ -1,6 +1,6 @@
 
-from commands import command
-from TelegramUser import UserFinder
+from commands import command, ChatType
+from TelegramUser import TUser
 
 
 def init_database(user, **kwargs):
@@ -10,51 +10,51 @@ def init_database(user, **kwargs):
         user.privileges = set()
 
 
-
 command("/start", init_database)
 
-def give_access(user, message, command_info, **kwargs):
+
+def give_access(user, chat, message, command_info, **kwargs):
     if "Admin" not in user.privileges:
-        user.sendMessage("Only admins can give access.")
+        chat.sendMessage("Only admins can give access.")
         return
     if len(message) != 3:
-        user.sendMessage(command_info.help_use_hint)
+        chat.sendMessage(command_info.help_use_hint)
         return
     target_username = message[1]
     privilege = message[2]
-    target = UserFinder.get_user_by_username(target_username)
+    target = TUser.get_user_by_username(target_username)
     if not target:
-        user.sendMessage("User " + target_username + " do not exist")
+        chat.sendMessage("User " + target_username + " do not exist")
         return
     target.privileges.add(privilege)
-    user.sendMessage(target_username + " is " + privilege + " now.")
+    chat.sendMessage(target_username + " is " + privilege + " now.")
 
     target.sendMessage(user.username + " gives your right to " + privilege)
 
 
-def remove_access(user, message, command_info, **kwargs):
+def remove_access(user, chat, message, command_info, **kwargs):
     if "Admin" not in user.privileges:
-        user.sendMessage("Only admins can remove access.")
+        chat.sendMessage("Only admins can remove access.")
         return
     if len(message) != 3:
-        user.sendMessage(command_info.help_use_hint)
+        chat.sendMessage(command_info.help_use_hint)
         return
     target_username = message[1]
     privilege = message[2]
-    target = UserFinder.get_user_by_username(target_username)
+    target = TUser.get_user_by_username(target_username)
     if not target:
-        user.sendMessage("User " + target_username + " do not exist")
+        chat.sendMessage("User " + target_username + " do not exist")
         return
     if message[2] == "Admin" and user == target:
-        user.sendMessage("You can't remove Admin rights from yourself")
+        chat.sendMessage("You can't remove Admin rights from yourself")
         return
     target.privileges.remove(privilege)
-    user.sendMessage(target_username + " is no longer " + privilege)
+    chat.sendMessage(target_username + " is no longer " + privilege)
     target.sendMessage(user.username + " removes your right to " + privilege)
 
 
-def check_access(user, **kwargs):
-    user.sendMessage(str(user.privileges))
+def check_access(user, chat, **kwargs):
+    chat.sendMessage(str(user.privileges))
 
 
 command("/GiveAccess", give_access,
@@ -66,8 +66,11 @@ command("/RemoveAccess", remove_access,
 command("/CheckAccess", check_access,
         help_description="Check things that you or other user have access to.")
 
+
 def set_admin(user, **kwargs):
     user.privileges.add("Admin")
     user.sendMessage("You are Admin now")
 
-command("/Admin", set_admin, help_description="CHEAT!, gives you Admin rights")
+
+command("/Admin", set_admin, help_description="CHEAT!, gives you Admin rights",
+        available_in=set({ChatType.PRIVATE}))

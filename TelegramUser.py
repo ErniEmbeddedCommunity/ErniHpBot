@@ -17,12 +17,9 @@ def redis_decode(inbytes):
 
 class RedisStorage():
 
-    bot = None
 
-    def __init__(self, telegram_user, bot=None):
+    def __init__(self, telegram_user):
         self.id = telegram_user["id"]
-        if bot != None:
-            RedisStorage.bot = bot
         for key, value in telegram_user.items():
             self[key] = value
 
@@ -137,6 +134,16 @@ class RedisStorage():
         for key in keys:
             CONN.delete(key)
 
+    def get_set(self, setname):
+        """
+        Safe handle to get a set from redis.
+        Returns the set if exist or returns a empty one.
+        """
+        newset = self.__getattr__(setname)
+        if newset == None:
+            self.__setattr__(setname,set())
+            return self.__getattr__(setname)
+        return newset
 
 class RedisSet:
     """
@@ -265,6 +272,7 @@ class RedisList:
 
 
 class TChat(RedisStorage):
+    bot = None
     def sendMessage(self, msg, keyboard=None):
         if keyboard is not None:
             keyboard_markup = self.generate_keyboard_from_list(keyboard)

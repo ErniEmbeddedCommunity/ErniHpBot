@@ -3,18 +3,11 @@ from commands import command, ChatType
 from TelegramUser import TUser
 
 
-def init_database(user, **kwargs):
-    """Creates the key in the database for privileges"""
-    privileges = user.privileges
-    if privileges == None:
-        user.privileges = set()
-
-
-command("/start", init_database)
-
+def check_for_access(user, command_info):
+    return command_info.required_rights and command_info.required_rights not in user.get_set("privileges")
 
 def give_access(user, chat, message, command_info, **kwargs):
-    if "Admin" not in user.privileges:
+    if check_for_access(user, command_info):
         chat.sendMessage("Only admins can give access.")
         return
     if len(message) != 3:
@@ -33,7 +26,7 @@ def give_access(user, chat, message, command_info, **kwargs):
 
 
 def remove_access(user, chat, message, command_info, **kwargs):
-    if "Admin" not in user.privileges:
+    if check_for_access(user, command_info):
         chat.sendMessage("Only admins can remove access.")
         return
     if len(message) != 3:
@@ -54,21 +47,23 @@ def remove_access(user, chat, message, command_info, **kwargs):
 
 
 def check_access(user, chat, **kwargs):
-    chat.sendMessage(str(user.privileges))
+    chat.sendMessage(str(user.get_set("privileges")))
 
 
 command("/GiveAccess", give_access,
         help_description="Give Access to user",
-        help_use_hint="Usage: /GiveAccess @username Led")
+        help_use_hint="Usage: /GiveAccess @username Led",
+        required_rights="Admin")
 command("/RemoveAccess", remove_access,
         help_description="Remove Access to user,",
-        help_use_hint="Usage: /RemoveAccess @username Led")
+        help_use_hint="Usage: /RemoveAccess @username Led",
+        required_rights="Admin")
 command("/CheckAccess", check_access,
         help_description="Check things that you or other user have access to.")
 
 
 def set_admin(user, **kwargs):
-    user.privileges.add("Admin")
+    user.get_set("privileges").add("Admin")
     user.sendMessage("You are Admin now")
 
 

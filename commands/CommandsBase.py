@@ -54,25 +54,6 @@ def get_execution_preference(command):
 class command():
     """
     creates a telegram command
-
-    The do_action function gets the following information:
-        @param message = return value for _check_if_msg_match, 
-                        in this case a list with all the words 
-                        in the message just like message.split()
-        @param user = TUser instance for the sender.
-        @param telegram_message= message strunct received from telegram,
-                                you can get a lot of usefull information 
-                                but with message if often enough
-        @param handled = (ON DEVELOPMEN)
-        @param command_info= command instance for the current command.
-                            you can get information for rights or help
-                            hits from this.
-    the function must return the handled status for the command in order
-    to allow other command instances to interact with it.
-    by default, if you don't return a value but the command matchs.
-    it will be register as handled.
-
-
     @param command_name: Command identification name
     @param do_action: Callback function when the command is executed.
     @param help_description: Description for help menu,
@@ -90,6 +71,32 @@ class command():
     @param available_in: select the kind of chat where the command is available.
     @param enabled_for_user: if None, enabled for everyone
                              if set(TUsers), enabled only for users in this set.
+
+    The do_action function gets the following information:
+        @param message = return value for _check_if_msg_match, 
+                        in this case a list with all the words 
+                        in the message just like message.split()
+        @param user = TUser instance for the sender.
+        @param telegram_message= message strunct received from telegram,
+                                you can get a lot of usefull information 
+                                but with message if often enough
+        @param handled = (ON DEVELOPMEN)
+        @param command_info= command instance for the current command.
+                            you can get information for rights or help
+                            hits from this.
+        @return = The function must return the handled status for the command in order
+                    to allow other command instances to interact with it.
+                    by default, if you don't return a value but the command matchs.
+                    it will be register as handled.
+    the execution_preference is 0 by default and I decided to follow this rule:
+        10 -> high preference commands with no blocking actions, (like a global msg log)
+        5 -> high preference commands with blocking actions, (like a keyboard)
+        4 -> Error catch for level 5, (catch non keyborad msg and block)
+        0 -> normal commands with no care about execution order (like /help)
+        -1 -> Error catch for normal commands
+        -5 -> Detect type erros in commands and send help to the user (TODO)
+        -10 -> general detect Not handled commands and send a response (Try /help msg)
+    
     """
 
     def __init__(self, command_name, do_action,

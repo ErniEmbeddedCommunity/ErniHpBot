@@ -1,9 +1,9 @@
 
 from commands import command
 from TelegramUser import TUser
-
+from UserPrivileges import check_for_access
 def find_user(user, chat, message, command_info, **kwars):
-    if "Admin" not in user.privileges:
+    if check_for_access(user, command_info):
         chat.sendMessage("Only admins can find users.")
         return
     if len(message) != 2:

@@ -3,12 +3,13 @@
 
 import os
 from commands import command,KeyboardCommand
+from ..tools.UserPrivileges import check_for_access
 
 if os.uname().machine == "armv7l":
     print("Running on raspberry PI, real gpiozero enabled")
     from gpiozero import LED
 else:
-    print("Runnong outside raspberry, dummy gpiozero enabled")
+    print("Runn.ong outside raspberry, dummy gpiozero enabled")
     from .gpiozero_dummy import LED
 
 
@@ -16,7 +17,7 @@ led = LED(17)
 
 
 def on(user, chat, command_info, **kwargs):
-    if command_info.required_rights and command_info.required_rights not in user.privileges:
+    if check_for_access(user, command_info):
         chat.sendMessage("You don't have rights to use the Led\nAsk for " +
                          command_info.required_rights + " access to an Admin.")
         return
@@ -26,7 +27,7 @@ def on(user, chat, command_info, **kwargs):
 
 
 def off(user, chat, command_info, **kwargs):
-    if command_info.required_rights != ''  and command_info.required_rights not in user.privileges:
+    if check_for_access(user, command_info):
         chat.sendMessage("You don't have rights to use the Led\nAsk for " +
                          command_info.required_rights + " access to an Admin.")
         return
@@ -35,7 +36,7 @@ def off(user, chat, command_info, **kwargs):
     chat.sendMessage("led off")
 
 def enable_control(user, chat, command_info, **kwargs):
-    if command_info.required_rights and command_info.required_rights not in user.privileges:
+    if check_for_access(user, command_info):
         chat.sendMessage("You don't have rights to use the Led\nAsk for " +
                          command_info.required_rights + " access to an Admin.")
         return

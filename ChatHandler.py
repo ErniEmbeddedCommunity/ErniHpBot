@@ -61,8 +61,8 @@ class PrivateUserChat(telepot.helper.ChatHandler):
     def on_chat_message(self, msg):
         """handle new msg."""
         # self._user.update_telegram_user(msg["from"])
-        self.chat = TelegramUser.TGroup(msg["chat"], self.bot)
-        self.user = TelegramUser.TUser(msg["from"], self.bot)
+        self.chat = TelegramUser.TGroup(msg["chat"])
+        self.user = TelegramUser.TUser(msg["from"])
         try:
             CommandsBase.redirect_msg(msg, self.user, self.chat)
         except telepot.exception.TelegramError as err:

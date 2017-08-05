@@ -6,11 +6,11 @@ from TelegramBotCommands import BaseCommand, Keyboard
 from TelegramBotCommands.Tools.UserPrivileges import check_for_access
 
 try:
-    print("Running on raspberry PI, real gpiozero enabled")
     from gpiozero import LED
+    print("Running on raspberry PI, real gpiozero enabled")
 except ImportError as ex:
-    print("Runn.ong outside raspberry, dummy gpiozero enabled")
     from .gpiozero_dummy import LED
+    print("Runn.ong outside raspberry, dummy gpiozero enabled")
 
 
 PRIVILEGE_NAME = "Led"

@@ -1,7 +1,7 @@
 
-from ..CommandsBase import BaseCommand, PatternCommand, HandledStatus, ChatType, KeyboardCommand
+from ..CommandsBase import BaseCommand, PatternCommand, HandledStatus, ChatType, Keyboard
 
-KEYBOARD = KeyboardCommand() 
+KEYBOARD = Keyboard() 
 
 @BaseCommand.register("/dbreset",
                       help_description="Removes all the user data from the database.",

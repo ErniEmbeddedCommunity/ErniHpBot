@@ -72,6 +72,12 @@ class PrivateUserChat(telepot.helper.ChatHandler):
         except telepot.exception.TelegramError as err:
             print(err)
 
+    def on_callback_query(self, msg):
+        msg["text"] = msg["data"]
+        msg["chat"] = msg["from"]
+        print(msg)
+        self.on_chat_message(msg)
+
     def on__idle(self, event):
         """Do something on idle"""
         # call base class on_idle to rise an exception and stop the thread
@@ -151,17 +157,3 @@ class GroupChat(telepot.helper.ChatHandler):
         super().on__idle(event)
 
 
-# TOKEN = sys.argv[1]  # get token from command-line
-# TIMEOUT = 60
-# bot = telepot.DelegatorBot(TOKEN, [
-#     pave_event_space()(
-#         per_chat_id(), create_open, PrivateUserChat, timeout=TIMEOUT)
-#     # pave_event_space()(
-#     #     per_chat_id(types='private'), create_open, PrivateUserChat, timeout=TIMEOUT),
-#     # pave_event_space()(
-#     #     per_chat_id(types=['supergroup', 'group']), create_open, GroupChat, timeout=TIMEOUT),
-# ])
-# MessageLoop(bot).run_as_thread()
-
-# while 1:
-#     time.sleep(10)

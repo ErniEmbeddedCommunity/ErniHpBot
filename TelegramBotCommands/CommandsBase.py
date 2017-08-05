@@ -24,6 +24,7 @@ class ChatType(Enum):
     SUPERGROUP = "supergroup"
 
 
+_registered_commands = list()
 def redirect_msg(msg, user, chat):
     handled = HandledStatus.NOT_HANDLED
     for command in _registered_commands:
@@ -48,7 +49,6 @@ def redirect_msg(msg, user, chat):
             print(ex)
 
 
-_registered_commands = list()
 
 
 class BaseCommand():
@@ -115,7 +115,7 @@ class BaseCommand():
         Creates and registers a command.
         if for any reason, you need to havea access to the command instance,
         you can call this function directly and get the second return parameter.
-        see an example in the implementation of KeyboardCommand.
+        see an example in the implementation of Keyboard.
         """
         def return_function(do_action):
             new_command = BaseCommand(command_name,
@@ -304,7 +304,7 @@ class PatternCommand(BaseCommand):
         return None
 
 
-class KeyboardCommand():
+class Keyboard():
     """Sends a keyboard and waits for response"""
 
     callback = dict()
@@ -327,9 +327,9 @@ class KeyboardCommand():
 
     @staticmethod
     def keypress(chat, message, **kwargs):
-        KeyboardCommand.command.disable_for_user(chat)
+        Keyboard.command.disable_for_user(chat)
         key = None
-        for rowkey in KeyboardCommand.keyboard[chat.id]:
+        for rowkey in Keyboard.keyboard[chat.id]:
             if isinstance(rowkey, list):
                 for columkey in rowkey:
                     if message[0] == columkey:
@@ -342,15 +342,67 @@ class KeyboardCommand():
                     key = rowkey
                     break
 
-        del KeyboardCommand.keyboard[chat.id]
-        callback = KeyboardCommand.callback[chat.id]
-        del KeyboardCommand.callback[chat.id]
+        del Keyboard.keyboard[chat.id]
+        callback = Keyboard.callback[chat.id]
+        del Keyboard.callback[chat.id]
 
         callback(**kwargs, chat=chat, message=message, key=key)
         return HandledStatus.HANDLED_BREAK
 
     keypress_decorator, command = PatternCommand.register(
         "(.*)",
+        execution_preference=4,
+        enabled_key=set()
+    )(keypress.__func__)
+
+class InlineKeyboard():
+    """Sends a keyboard and waits for response"""
+
+    callback = dict()
+    keyboard = dict()
+    # def __init__(self):
+    #     self.command = PatternCommand(
+    #         "(.*)", self.keypress, execution_preference=4, enabled_key=set())
+    #     self.command.add_to_registered_list()
+
+    @classmethod
+    def send(cls, chat, text, keyboard, callback):
+        cls.callback[chat.id] = callback
+        cls.keyboard[chat.id] = keyboard
+        cls.command.enable_for_user(chat)
+        chat.sendMessage(text, inlinekeyboard=cls.keyboard[chat.id])
+
+    @classmethod
+    def keep_instance(cls, pattern_command_instance):
+        cls.command = pattern_command_instance
+
+    @staticmethod
+    def keypress(chat, message, **kwargs):
+        print(chat)
+        InlineKeyboard.command.disable_for_user(chat)
+        key = None
+        for rowkey in InlineKeyboard.keyboard[chat.id]:
+            if isinstance(rowkey, list):
+                for columkey in rowkey:
+                    if message[0] == columkey:
+                        key = columkey
+                        break
+                if key is not None:
+                    break
+            else:
+                if message[0] == rowkey:
+                    key = rowkey
+                    break
+
+        del InlineKeyboard.keyboard[chat.id]
+        callback = InlineKeyboard.callback[chat.id]
+        del InlineKeyboard.callback[chat.id]
+
+        callback(**kwargs, chat=chat, message=message, key=key)
+        return HandledStatus.HANDLED_BREAK
+
+    keypress_decorator, command = PatternCommand.register(
+        "/InlineKeyboard_(.*)",
         execution_preference=4,
         enabled_key=set()
     )(keypress.__func__)

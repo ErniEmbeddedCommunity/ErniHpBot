@@ -4,19 +4,22 @@ import telepot
 
 
 from telepot.loop import MessageLoop
-from telepot.delegate import pave_event_space, per_chat_id, create_open
+from telepot.delegate import pave_event_space, per_chat_id, create_open, include_callback_query_chat_id
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
 
 from .ChatHandler import PrivateUserChat
 from .TelegramUser import TChat
-from .CommandsBase import BaseCommand, PatternCommand, HandledStatus, ChatType, KeyboardCommand
+from .CommandsBase import BaseCommand, PatternCommand, HandledStatus, ChatType, Keyboard, InlineKeyboard
 
 from .Tools import *
 
-def Start(telegram_bot_token, thread_timeout = 60):
+
+def Start(telegram_bot_token, thread_timeout=60):
     bot = telepot.DelegatorBot(telegram_bot_token, [
-        pave_event_space()(
-            per_chat_id(), create_open, PrivateUserChat, timeout=thread_timeout)
+        include_callback_query_chat_id(
+            pave_event_space())(
+                per_chat_id(), create_open, PrivateUserChat, timeout=thread_timeout)
+
         # pave_event_space()(
         #     per_chat_id(types='private'), create_open, PrivateUserChat, timeout=TIMEOUT),
         # pave_event_space()(
@@ -27,8 +30,9 @@ def Start(telegram_bot_token, thread_timeout = 60):
     TChat.bot = bot
     TChat.bot_username = TChat.bot.getMe()["username"]
     print(TChat.bot.getMe())
-    
+
+
 if __name__ == '__main__':
     TOKEN = sys.argv[1]  # get token from command-line
     TIMEOUT = 60
-    Start(TOKEN,TIMEOUT)
+    Start(TOKEN, TIMEOUT)

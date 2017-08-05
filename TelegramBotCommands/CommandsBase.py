@@ -398,7 +398,7 @@ class InlineKeyboard():
         callback = InlineKeyboard.callback[chat.id]
         del InlineKeyboard.callback[chat.id]
 
-        callback(**kwargs, chat=chat, message=message, key=key)
+        callback(chat=chat, message=message, key=key, **kwargs)
         return HandledStatus.HANDLED_BREAK
 
     keypress_decorator, command = PatternCommand.register(

@@ -15,10 +15,13 @@ class HandledStatus(Enum):
     HANDLED = 0
     NOT_HANDLED = 1
     HANDLED_BREAK = 2
+
+
 class ChatType(Enum):
     PRIVATE = "private"
     GROUP = "group"
     SUPERGROUP = "supergroup"
+
 
 def redirect_msg(msg, user, chat):
     handled = HandledStatus.NOT_HANDLED
@@ -28,7 +31,7 @@ def redirect_msg(msg, user, chat):
                 telegram_message=msg, user=user, chat=chat)
             if msg_match != None:
                 result = command.do_action(message=msg_match,
-                                           user=user, chat=chat, 
+                                           user=user, chat=chat,
                                            telegram_message=msg, handled=handled)
 
                 if isinstance(result, HandledStatus):
@@ -47,11 +50,7 @@ def redirect_msg(msg, user, chat):
 _registered_commands = list()
 
 
-def get_execution_preference(command):
-    return command.execution_preference * -1
-
-
-class command():
+class BaseCommand():
     """
     creates a telegram command
     @param command_name: Command identification name
@@ -96,14 +95,73 @@ class command():
         -1 -> Error catch for normal commands
         -5 -> Detect type erros in commands and send help to the user (TODO)
         -10 -> general detect Not handled commands and send a response (Try /help msg)
-    
-    """
 
-    def __init__(self, command_name, do_action,
-                 help_description="", help_group="", help_use_hint="",
-                 execution_preference=0, required_rights="",
-                 available_in=set({ChatType.PRIVATE,ChatType.GROUP,ChatType.SUPERGROUP}),
-                 enabled_key=None):
+    """
+    @classmethod
+    def register(cls, 
+                 command_name,
+                 help_description="",
+                 help_group="",
+                 help_use_hint="",
+                 execution_preference=0,
+                 required_rights="",
+                 available_in=set(
+                     {ChatType.PRIVATE, ChatType.GROUP, ChatType.SUPERGROUP}),
+                 enabled_key=None
+                 ):
+        """
+        This functions is intended to be used as a decorator.
+        Creates and registers a command.
+        """
+        print("calling from calss: " + str(cls))
+
+        def return_function(do_action):
+            new_command = BaseCommand(command_name,
+                                      do_action,
+                                      help_description,
+                                      help_group,
+                                      help_use_hint,
+                                      execution_preference,
+                                      required_rights,
+                                      available_in,
+                                      enabled_key
+                                      )
+            new_command.add_to_registered_list()
+            return do_action, new_command
+        return return_function
+
+    def add_to_registered_list(self):
+        """
+        Add this command to the registerd command list.
+        this function is called automatically in the register function
+        Don't add the command multiple times
+        """
+        _registered_commands.append(self)
+        _registered_commands.sort(key=self.get_execution_preference)
+    def remove_from_registered_list(self):
+        """
+        Remove this command from the registered command list. 
+        If you want to temporally disable the command use enabled_key insted
+        """
+        _registered_commands.remove(self)
+
+    @staticmethod
+    def get_execution_preference(command):
+        """This function is intended to be use with the sort list command."""
+        return command.execution_preference * -1
+
+    def __init__(self,
+                 command_name,
+                 do_action,
+                 help_description="",
+                 help_group="",
+                 help_use_hint="",
+                 execution_preference=0,
+                 required_rights="",
+                 available_in=set(
+                     {ChatType.PRIVATE, ChatType.GROUP, ChatType.SUPERGROUP}),
+                 enabled_key=None
+                 ):
         self.help_description = help_description
         self.help_group = help_group
         self.help_use_hint = help_use_hint
@@ -111,12 +169,12 @@ class command():
         self.command_name = command_name
         self._do_action = do_action
         self.execution_preference = execution_preference
-        self.available_in=available_in
-        self.enabled_key=enabled_key
-        _registered_commands.append(self)
-        _registered_commands.sort(key=get_execution_preference)
+        self.available_in = available_in
+        self.enabled_key = enabled_key
 
     def _common_match_requirements(self, telegram_message, user, chat):
+        """ Checks the common requirement for matching."""
+        # check if its enabled for all users or just a set of them
         if self.enabled_key is not None:
             if user.id not in self.enabled_key:
                 return False
@@ -125,9 +183,10 @@ class command():
             return False
         # Check for chat type
         chattype = chat["type"]
+
         def getvalue(x):
             return x.value
-        available_list =  list(map(getvalue,self.available_in))
+        available_list = list(map(getvalue, self.available_in))
         if chattype not in available_list:
             return False
         return True
@@ -149,8 +208,12 @@ class command():
         #     return voiceFile
 
     def do_action(self, message, user, chat, telegram_message, handled):
-        return self._do_action(message=message, user=user, chat=chat,
-                               telegram_message=telegram_message, handled=handled, command_info=self)
+        return self._do_action(message=message,
+                               user=user,
+                               chat=chat,
+                               telegram_message=telegram_message,
+                               handled=handled,
+                               command_info=self)
 
     def __str__(self):
         return self.command_name + ": " + self.help_description
@@ -164,66 +227,122 @@ class command():
     def disable_for_user(self, user):
         self.enabled_key.remove(user.id)
 
-class pattern_command(command):
+
+class PatternCommand(BaseCommand):
     """
     Basically the same as command but matches de text with a regex expression
     """
+    @classmethod
+    def register(cls, command_pattern,
+                 command_name="",
+                 help_description="",
+                 help_group="",
+                 help_use_hint="",
+                 execution_preference=0,
+                 required_rights="",
+                 available_in=set(
+                     {ChatType.PRIVATE, ChatType.GROUP, ChatType.SUPERGROUP}),
+                 enabled_key=None
+                 ):
+        """This functions creates and registers a command."""
+        print("calling from calss: " + str(cls))
 
-    def __init__(self, command_pattern, do_action, command_name="",
-                 help_description="", help_group="", help_use_hint="",
-                 execution_preference=0, required_rights="",enabled_key=None):
+        def return_function(do_action):
+            new_command = PatternCommand(command_pattern,
+                                         do_action, command_name,
+                                         help_description,
+                                         help_group,
+                                         help_use_hint,
+                                         execution_preference,
+                                         required_rights,
+                                         available_in,
+                                         enabled_key)
+            new_command.add_to_registered_list()
+            return do_action, new_command
+        return return_function
+
+    def __init__(self,
+                 command_pattern,
+                 do_action,
+                 command_name="",
+                 help_description="",
+                 help_group="",
+                 help_use_hint="",
+                 execution_preference=0,
+                 required_rights="",
+                 available_in=set(
+                     {ChatType.PRIVATE, ChatType.GROUP, ChatType.SUPERGROUP}),
+                 enabled_key=None
+                 ):
         self._command_pattern = re.compile(command_pattern)
         if command_name == "":
             command_name = command_pattern
-        super().__init__(command_name=command_name, do_action=do_action,
-                         help_description=help_description, help_group=help_group, help_use_hint=help_use_hint,
-                         execution_preference=execution_preference, required_rights=required_rights, enabled_key=enabled_key)
+        super().__init__(command_name=command_name,
+                         do_action=do_action,
+                         help_description=help_description,
+                         help_group=help_group,
+                         help_use_hint=help_use_hint,
+                         execution_preference=execution_preference,
+                         required_rights=required_rights, 
+                         enabled_key=enabled_key)
 
     def _check_if_msg_match(self, telegram_message, user, chat):
         if not self._common_match_requirements(telegram_message, user, chat):
             return
-        
+
         match = self._command_pattern.match(telegram_message["text"])
         if match:
             return match.groups()
         return None
 
+
 class KeyboardCommand():
     """Sends a keyboard and waits for response"""
-    def __init__(self, keyboard, callback, text=""):
-        self.callback = callback
-        self.text = text
-        self.keyboard = keyboard
-        self.commands = list()
-        for rowkey in self.keyboard:
-            if isinstance(rowkey,list):
-                for columkey in rowkey:
-                    self.commands.append(command(columkey,self.keypress, execution_preference=5, enabled_key=set()))
-            else:
-                self.commands.append(command(rowkey,self.keypress, execution_preference=5, enabled_key=set()))
-        self.commands.append(pattern_command("(.*)",self.keypress, execution_preference=4, enabled_key=set()))
-    def send(self, chat, replace_text = ""):
-        for c in self.commands:
-            # c.enabled_key.add(chat.id)
-            c.enable_for_user(chat)
-        if replace_text != "":
-            chat.sendMessage(replace_text,self.keyboard)
-        else:
-            chat.sendMessage(self.text,self.keyboard)
 
-    def keypress(self, chat, message, **kwargs):
-        for c in self.commands:
-            # c.enabled_key.remove(chat.id)
-            c.disable_for_user(chat)
+    callback = dict()
+    keyboard = dict()
+    # def __init__(self):
+    #     self.command = PatternCommand(
+    #         "(.*)", self.keypress, execution_preference=4, enabled_key=set())
+    #     self.command.add_to_registered_list()
+
+
+    @classmethod    
+    def send(cls, chat, text, keyboard, callback):
+        cls.callback[chat.id] = callback
+        cls.keyboard[chat.id] = keyboard
+        cls.command.enable_for_user(chat)
+        chat.sendMessage(text, cls.keyboard[chat.id])
+    @classmethod
+    def keep_instance(cls, pattern_command_instance):
+        cls.command = pattern_command_instance
+
+    @staticmethod
+    def keypress(chat, message, **kwargs):
+        KeyboardCommand.command.disable_for_user(chat)
         key = None
-        for rowkey in self.keyboard:
-            if isinstance(rowkey,list):
+        for rowkey in KeyboardCommand.keyboard[chat.id]:
+            if isinstance(rowkey, list):
                 for columkey in rowkey:
                     if message[0] == columkey:
                         key = columkey
+                        break
+                if key is not None:
+                    break
             else:
                 if message[0] == rowkey:
                     key = rowkey
                     break
-        self.callback(**kwargs, chat=chat, message=message, key=key)
+
+        del KeyboardCommand.keyboard[chat.id]
+        callback = KeyboardCommand.callback[chat.id]
+        del KeyboardCommand.callback[chat.id]
+
+        callback(**kwargs, chat=chat, message=message, key=key)
         return HandledStatus.HANDLED_BREAK
+        
+    keypress_decorator, command = PatternCommand.register(
+            "(.*)",
+             execution_preference=4,
+             enabled_key=set()
+             )(keypress.__func__)

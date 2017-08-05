@@ -1,11 +1,16 @@
 
-from commands import command
+from commands import BaseCommand
 from TelegramUser import TUser
-from UserPrivileges import check_for_access
+# from UserPrivileges import check_for_access
+
+
+@BaseCommand.register("/finduser",
+                      help_description="Finds an user by username",
+                      help_use_hint="Write the user name after the command, /finduser someone")
 def find_user(user, chat, message, command_info, **kwars):
-    if check_for_access(user, command_info):
-        chat.sendMessage("Only admins can find users.")
-        return
+    # if check_for_access(user, command_info):
+    #     chat.sendMessage("Only admins can find users.")
+    #     return
     if len(message) != 2:
         chat.sendMessage(command_info.help_use_hint)
         return
@@ -16,13 +21,7 @@ def find_user(user, chat, message, command_info, **kwars):
     chat.sendMessage(str(found))
 
 
-command("/finduser", find_user, help_description="Finds an user by username",
-        help_use_hint="Write the user name after the command, /finduser someone")
-
-
-
+@BaseCommand.register("/Me",
+                      help_description="Shows your own information")
 def me(user, chat,  **kwars):
     chat.sendMessage(str(user))
-
-
-command("/Me", me, help_description="Shows your own information")

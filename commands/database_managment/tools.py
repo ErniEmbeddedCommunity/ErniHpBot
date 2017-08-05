@@ -1,13 +1,15 @@
 
 import re
 import redis
-from commands import command, pattern_command, HandledStatus, ChatType,KeyboardCommand
+from commands import BaseCommand, PatternCommand, HandledStatus, ChatType, KeyboardCommand
 
+KEYBOARD = KeyboardCommand() 
 
+@BaseCommand.register("/dbreset",
+                      help_description="Removes all the user data from the database.",
+                      available_in=set({ChatType.PRIVATE}))
 def reset(chat, **kwargs):
-    keyboard.send(chat)
-    # chat.sendMessage("¿Are you sure?", ["Yes", "No"])
-    # confirmation_command.enabled = True
+    KEYBOARD.send(chat, "¿Are you sure?",["Yes","No"], get_confirmation)
 
 
 def get_confirmation(chat, user, key, **kwargs):
@@ -19,12 +21,8 @@ def get_confirmation(chat, user, key, **kwargs):
         chat.sendMessage("Cancellded")
     if key == None:
         # sends the keyboard again
-        keyboard.send(chat,"Please, use the keyboard")
+        KEYBOARD.send(chat, "Please, use the keyboard",["Yes","No"], get_confirmation)
     # makes sure that any other command catchs the message by error
     return HandledStatus.HANDLED_BREAK
 
-command("/dbreset", reset, help_description="Removes all the user data from the database.",
-        available_in=set({ChatType.PRIVATE}))
-# confirmation_command = pattern_command(
-#     "(.*)", get_confirmation, enabled=False, execution_preference=5)
-keyboard = KeyboardCommand(["yes","no"],get_confirmation,"¿Are you sure?")
+

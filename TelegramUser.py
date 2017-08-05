@@ -293,7 +293,6 @@ class TChat(RedisStorage):
         return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=resize,
                                    one_time_keyboard=one_time_keyboard)
 
-
 class TUser(TChat):
     """handles the data for each user"""
     @staticmethod

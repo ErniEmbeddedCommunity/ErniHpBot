@@ -1,11 +1,16 @@
 
-from commands import command, ChatType
+from commands import BaseCommand, ChatType
 from TelegramUser import TUser
 
 
 def check_for_access(user, command_info):
     return command_info.required_rights and command_info.required_rights not in user.get_set("privileges")
 
+
+@BaseCommand.register("/GiveAccess",
+                      help_description="Give Access to user",
+                      help_use_hint="Usage: /GiveAccess @username Led",
+                      required_rights="Admin")
 def give_access(user, chat, message, command_info, **kwargs):
     if check_for_access(user, command_info):
         chat.sendMessage("Only admins can give access.")
@@ -25,6 +30,10 @@ def give_access(user, chat, message, command_info, **kwargs):
     target.sendMessage(user.username + " gives your right to " + privilege)
 
 
+@BaseCommand.register("/RemoveAccess",
+                      help_description="Remove Access to user,",
+                      help_use_hint="Usage: /RemoveAccess @username Led",
+                      required_rights="Admin")
 def remove_access(user, chat, message, command_info, **kwargs):
     if check_for_access(user, command_info):
         chat.sendMessage("Only admins can remove access.")
@@ -46,26 +55,18 @@ def remove_access(user, chat, message, command_info, **kwargs):
     target.sendMessage(user.username + " removes your right to " + privilege)
 
 
+@BaseCommand.register("/CheckAccess",
+                      help_description="Check things that you or other user have access to.")
 def check_access(user, chat, **kwargs):
     chat.sendMessage(str(user.get_set("privileges")))
 
 
-command("/GiveAccess", give_access,
-        help_description="Give Access to user",
-        help_use_hint="Usage: /GiveAccess @username Led",
-        required_rights="Admin")
-command("/RemoveAccess", remove_access,
-        help_description="Remove Access to user,",
-        help_use_hint="Usage: /RemoveAccess @username Led",
-        required_rights="Admin")
-command("/CheckAccess", check_access,
-        help_description="Check things that you or other user have access to.")
-
-
+@BaseCommand.register("/Admin", help_description="CHEAT!, gives you Admin rights",
+                      available_in=set({ChatType.PRIVATE}))
 def set_admin(user, **kwargs):
     user.get_set("privileges").add("Admin")
     user.sendMessage("You are Admin now")
 
 
-command("/Admin", set_admin, help_description="CHEAT!, gives you Admin rights",
-        available_in=set({ChatType.PRIVATE}))
+# command("/Admin", set_admin, help_description="CHEAT!, gives you Admin rights",
+#         available_in=set({ChatType.PRIVATE}))

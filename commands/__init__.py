@@ -7,6 +7,6 @@ __all__ = [basename(f) for f in modules if not isfile(f)
            and not f.endswith('__pycache__')]
 print("loaded " + str(__all__) + " commands")
 
-
-from commands.CommandsBase import command, pattern_command, HandledStatus, ChatType, KeyboardCommand
+# __all__ = ['tools']
+from commands.CommandsBase import BaseCommand, PatternCommand, HandledStatus, ChatType, KeyboardCommand
 from commands import *

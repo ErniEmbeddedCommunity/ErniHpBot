@@ -2,6 +2,7 @@
 import re
 # from .TelegramUser import TUser
 from enum import Enum
+from .TelegramUser import TChat, TUser, TGroup
 
 
 class HandledStatus(Enum):
@@ -98,7 +99,7 @@ class BaseCommand():
 
     """
     @classmethod
-    def register(cls, 
+    def register(cls,
                  command_name,
                  help_description="",
                  help_group="",
@@ -139,6 +140,7 @@ class BaseCommand():
         """
         _registered_commands.append(self)
         _registered_commands.sort(key=self.get_execution_preference)
+
     def remove_from_registered_list(self):
         """
         Remove this command from the registered command list. 
@@ -177,7 +179,7 @@ class BaseCommand():
         """ Checks the common requirement for matching."""
         # check if its enabled for all users or just a set of them
         if self.enabled_key is not None:
-            if user.id not in self.enabled_key:
+            if chat.id not in self.enabled_key:
                 return False
         # check for message type
         if "text" not in telegram_message:
@@ -193,10 +195,15 @@ class BaseCommand():
         return True
 
     def _check_if_msg_match(self, telegram_message, user, chat):
+        if isinstance(chat, TGroup):
+            if "@" + chat.bot_username not in telegram_message["text"]:
+                return
+
         if not self._common_match_requirements(telegram_message, user, chat):
             return
         # check for message match
         message = telegram_message["text"].replace('_', ' ')
+        message = message.replace("@" + chat.bot_username, "")
         match = message.split()
         if match:
             if match[0].lower() == self.command_name.lower():
@@ -283,7 +290,8 @@ class PatternCommand(BaseCommand):
                          help_group=help_group,
                          help_use_hint=help_use_hint,
                          execution_preference=execution_preference,
-                         required_rights=required_rights, 
+                         required_rights=required_rights,
+                         available_in=available_in,
                          enabled_key=enabled_key)
 
     def _check_if_msg_match(self, telegram_message, user, chat):
@@ -306,13 +314,13 @@ class KeyboardCommand():
     #         "(.*)", self.keypress, execution_preference=4, enabled_key=set())
     #     self.command.add_to_registered_list()
 
-
-    @classmethod    
+    @classmethod
     def send(cls, chat, text, keyboard, callback):
         cls.callback[chat.id] = callback
         cls.keyboard[chat.id] = keyboard
         cls.command.enable_for_user(chat)
         chat.sendMessage(text, cls.keyboard[chat.id])
+
     @classmethod
     def keep_instance(cls, pattern_command_instance):
         cls.command = pattern_command_instance
@@ -340,9 +348,9 @@ class KeyboardCommand():
 
         callback(**kwargs, chat=chat, message=message, key=key)
         return HandledStatus.HANDLED_BREAK
-        
+
     keypress_decorator, command = PatternCommand.register(
-            "(.*)",
-             execution_preference=4,
-             enabled_key=set()
-             )(keypress.__func__)
+        "(.*)",
+        execution_preference=4,
+        enabled_key=set()
+    )(keypress.__func__)

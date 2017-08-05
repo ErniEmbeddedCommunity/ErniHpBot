@@ -25,7 +25,9 @@ def Start(telegram_bot_token, thread_timeout = 60):
     MessageLoop(bot).run_as_thread()
 
     TChat.bot = bot
-
+    TChat.bot_username = TChat.bot.getMe()["username"]
+    print(TChat.bot.getMe())
+    
 if __name__ == '__main__':
     TOKEN = sys.argv[1]  # get token from command-line
     TIMEOUT = 60

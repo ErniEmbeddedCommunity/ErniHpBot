@@ -8,7 +8,9 @@ from .RedisStorage import RedisStorage, CONN, redis_decode
 
 
 class TChat(RedisStorage):
+    # This variables will be defined externaly after bot initialization in __init__.py
     bot = None
+    bot_username = ""
 
     def redis_prefix(self, attr=""):
         """Generates the prefix for a desired attribute."""

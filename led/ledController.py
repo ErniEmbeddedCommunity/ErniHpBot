@@ -2,7 +2,7 @@
 
 
 import os
-from TelegramBotCommands import BaseCommand, KeyboardCommand
+from TelegramBotCommands import BaseCommand, Keyboard
 from TelegramBotCommands.Tools.UserPrivileges import check_for_access
 
 try:
@@ -14,7 +14,7 @@ except ImportError as ex:
 
 
 PRIVILEGE_NAME = "Led"
-LED_KEYBOARD = KeyboardCommand()
+LED_KEYBOARD = Keyboard()
 led = LED(17)
 
 

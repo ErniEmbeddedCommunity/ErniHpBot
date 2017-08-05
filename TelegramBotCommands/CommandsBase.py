@@ -1,6 +1,6 @@
 """ This file includes the definition for base command classes """
 import re
-import TelegramUser
+# from .TelegramUser import TUser
 from enum import Enum
 
 
@@ -246,7 +246,6 @@ class PatternCommand(BaseCommand):
                  enabled_key=None
                  ):
         """This functions creates and registers a command."""
-        print("calling from calss: " + str(cls))
 
         def return_function(do_action):
             new_command = PatternCommand(command_pattern,

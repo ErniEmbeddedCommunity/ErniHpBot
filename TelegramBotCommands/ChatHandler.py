@@ -5,8 +5,8 @@ import time
 import telepot
 # import ledController as led
 import tempfile
-import TelegramUser
-from commands import CommandsBase
+from .TelegramUser import TUser,TGroup,TChat
+from .CommandsBase import redirect_msg
 
 from telepot.loop import MessageLoop
 from telepot.delegate import pave_event_space, per_chat_id, create_open
@@ -62,13 +62,13 @@ class PrivateUserChat(telepot.helper.ChatHandler):
         """handle new msg."""
         # self._user.update_telegram_user(msg["from"])
         if msg["chat"]["id"] != msg["from"]["id"]:
-            self.chat = TelegramUser.TGroup(msg["chat"])
-            self.user = TelegramUser.TUser(msg["from"])
+            self.chat = TGroup(msg["chat"])
+            self.user = TUser(msg["from"])
         else:
-            self.chat = TelegramUser.TChat(msg["chat"])
-            self.user = TelegramUser.TUser(msg["from"])
+            self.chat = TChat(msg["chat"])
+            self.user = TUser(msg["from"])
         try:
-            CommandsBase.redirect_msg(msg, self.user, self.chat)
+            redirect_msg(msg, self.user, self.chat)
         except telepot.exception.TelegramError as err:
             print(err)
 

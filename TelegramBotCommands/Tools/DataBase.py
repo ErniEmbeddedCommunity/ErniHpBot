@@ -1,7 +1,5 @@
 
-import re
-import redis
-from commands import BaseCommand, PatternCommand, HandledStatus, ChatType, KeyboardCommand
+from ..CommandsBase import BaseCommand, PatternCommand, HandledStatus, ChatType, KeyboardCommand
 
 KEYBOARD = KeyboardCommand() 
 

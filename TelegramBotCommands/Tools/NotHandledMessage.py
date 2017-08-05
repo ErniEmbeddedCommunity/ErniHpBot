@@ -1,5 +1,4 @@
-from commands import PatternCommand, HandledStatus
-
+from ..CommandsBase import PatternCommand, HandledStatus
 
 @PatternCommand.register("(.*)", execution_preference=-10)
 def not_handled_msg(chat, message, handled,  **kwargs):

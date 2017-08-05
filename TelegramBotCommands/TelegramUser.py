@@ -4,7 +4,7 @@ abstract the communication with the database
 """
 
 from telepot.namedtuple import KeyboardButton, ReplyKeyboardMarkup
-from RedisStorage import RedisStorage, CONN, redis_decode
+from .RedisStorage import RedisStorage, CONN, redis_decode
 
 
 class TChat(RedisStorage):

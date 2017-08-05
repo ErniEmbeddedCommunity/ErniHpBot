@@ -1,6 +1,6 @@
 
-from commands import BaseCommand
-from TelegramUser import TUser
+from ..CommandsBase import BaseCommand
+from ..TelegramUser import TUser
 # from UserPrivileges import check_for_access
 
 

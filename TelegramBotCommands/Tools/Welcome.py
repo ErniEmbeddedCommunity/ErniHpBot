@@ -1,5 +1,5 @@
 
-from commands import BaseCommand, HandledStatus
+from ..CommandsBase import BaseCommand, HandledStatus
 
 
 @BaseCommand.register("/start",

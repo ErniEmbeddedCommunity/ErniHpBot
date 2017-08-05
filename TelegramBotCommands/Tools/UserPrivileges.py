@@ -1,6 +1,6 @@
 
-from commands import BaseCommand, ChatType
-from TelegramUser import TUser
+from ..CommandsBase import BaseCommand, ChatType
+from ..TelegramUser import TUser
 
 
 def check_for_access(user, command_info):

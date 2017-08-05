@@ -2,8 +2,8 @@
 
 
 import os
-from commands import BaseCommand, KeyboardCommand
-from ..tools.UserPrivileges import check_for_access
+from TelegramBotCommands import BaseCommand, KeyboardCommand
+from TelegramBotCommands.Tools.UserPrivileges import check_for_access
 
 try:
     print("Running on raspberry PI, real gpiozero enabled")

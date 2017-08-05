@@ -112,9 +112,10 @@ class BaseCommand():
         """
         This functions is intended to be used as a decorator.
         Creates and registers a command.
+        if for any reason, you need to havea access to the command instance,
+        you can call this function directly and get the second return parameter.
+        see an example in the implementation of KeyboardCommand.
         """
-        print("calling from calss: " + str(cls))
-
         def return_function(do_action):
             new_command = BaseCommand(command_name,
                                       do_action,
